@@ -15,27 +15,19 @@ namespace UPG_semestralka
 			Graphics g = e.Graphics;
 			g.Clear(Color.WhiteSmoke);
 
-			// Pøíklad bodového náboje
-			DrawCharge(g, new Point(200, 200), 5, true);  // Kladný náboj
-			DrawCharge(g, new Point(400, 300), -3, false); // Záporný náboj
+			int cx = Width / 2; //stred platna
+			int cy = Height / 2;
 
-			// Pøíklad vektoru intenzity pole
-			DrawFieldVector(g, new Point(300, 250), new Point(350, 270), 10);
+			// Pøíklad bodového náboje
+			DrawCharge(g, new Point(cx / 2, cy), -1, true);  // záporný náboj 0,-1
+			DrawCharge(g, new Point(3 * cx / 2, cy), 2, false); // kladný náboj 0,1
 		}
 		private void DrawCharge(Graphics g, Point position, int charge, bool isPositive)
 		{
-			int size = Math.Abs(charge) * 10; // Velikost náboje úmìrná jeho hodnotì
-			Color chargeColor = isPositive ? Color.Red : Color.Blue;
+			int size = Math.Abs(charge) * 75; // Velikost náboje úmìrná jeho hodnotì
+			Color chargeColor = isPositive ? Color.Blue : Color.Red;
 			g.FillEllipse(new SolidBrush(chargeColor), position.X - size / 2, position.Y - size / 2, size, size);
 			g.DrawString($"{charge} C", new Font("Arial", 10), Brushes.Black, position.X + size / 2, position.Y - size / 2);
-		}
-
-		private void DrawFieldVector(Graphics g, Point start, Point end, double magnitude)
-		{
-			Pen arrowPen = new Pen(Color.Green, 2);
-			arrowPen.EndCap = System.Drawing.Drawing2D.LineCap.ArrowAnchor;
-			g.DrawLine(arrowPen, start, end);
-			g.DrawString($"E: {magnitude}", new Font("Arial", 10), Brushes.Black, end.X + 5, end.Y);
 		}
 
 		private void drawingPanel_Resize(object sender, EventArgs e)
