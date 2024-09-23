@@ -29,10 +29,19 @@
 		private void InitializeComponent()
 		{
 			drawingPanel = new Panel();
+			btnScenario3 = new Button();
+			btnScenario2 = new Button();
+			btnScenario1 = new Button();
+			btnScenario0 = new Button();
+			drawingPanel.SuspendLayout();
 			SuspendLayout();
 			// 
 			// drawingPanel
 			// 
+			drawingPanel.Controls.Add(btnScenario3);
+			drawingPanel.Controls.Add(btnScenario2);
+			drawingPanel.Controls.Add(btnScenario1);
+			drawingPanel.Controls.Add(btnScenario0);
 			drawingPanel.Dock = DockStyle.Fill;
 			drawingPanel.Location = new Point(0, 0);
 			drawingPanel.Name = "drawingPanel";
@@ -40,6 +49,46 @@
 			drawingPanel.TabIndex = 0;
 			drawingPanel.Paint += drawingPanel_Paint;
 			drawingPanel.Resize += drawingPanel_Resize;
+			// 
+			// btnScenario3
+			// 
+			btnScenario3.Location = new Point(171, 3);
+			btnScenario3.Name = "btnScenario3";
+			btnScenario3.Size = new Size(50, 50);
+			btnScenario3.TabIndex = 3;
+			btnScenario3.Text = "3";
+			btnScenario3.UseVisualStyleBackColor = true;
+			btnScenario3.Click += btnScenario3_Click;
+			// 
+			// btnScenario2
+			// 
+			btnScenario2.Location = new Point(115, 3);
+			btnScenario2.Name = "btnScenario2";
+			btnScenario2.Size = new Size(50, 50);
+			btnScenario2.TabIndex = 2;
+			btnScenario2.Text = "2";
+			btnScenario2.UseVisualStyleBackColor = true;
+			btnScenario2.Click += btnScenario2_Click;
+			// 
+			// btnScenario1
+			// 
+			btnScenario1.Location = new Point(59, 3);
+			btnScenario1.Name = "btnScenario1";
+			btnScenario1.Size = new Size(50, 50);
+			btnScenario1.TabIndex = 1;
+			btnScenario1.Text = "1";
+			btnScenario1.UseVisualStyleBackColor = true;
+			btnScenario1.Click += btnScenario1_Click;
+			// 
+			// btnScenario0
+			// 
+			btnScenario0.Location = new Point(3, 3);
+			btnScenario0.Name = "btnScenario0";
+			btnScenario0.Size = new Size(50, 50);
+			btnScenario0.TabIndex = 0;
+			btnScenario0.Text = "0";
+			btnScenario0.UseVisualStyleBackColor = true;
+			btnScenario0.Click += btnScenario0_Click;
 			// 
 			// MainForm
 			// 
@@ -50,11 +99,16 @@
 			Name = "MainForm";
 			StartPosition = FormStartPosition.CenterScreen;
 			Text = "Vizualizace elektrostatického pole";
+			drawingPanel.ResumeLayout(false);
 			ResumeLayout(false);
 		}
 
 		#endregion
 
 		private Panel drawingPanel;
+		private Button btnScenario0;
+		private Button btnScenario3;
+		private Button btnScenario2;
+		private Button btnScenario1;
 	}
 }
