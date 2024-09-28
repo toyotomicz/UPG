@@ -1,4 +1,4 @@
-﻿namespace Cv2._1
+﻿namespace Cv03
 {
 	partial class MainForm
 	{
@@ -29,13 +29,10 @@
 		private void InitializeComponent()
 		{
 			drawingPanel = new Panel();
-			panel1 = new Panel();
-			drawingPanel.SuspendLayout();
 			SuspendLayout();
 			// 
 			// drawingPanel
 			// 
-			drawingPanel.Controls.Add(panel1);
 			drawingPanel.Dock = DockStyle.Fill;
 			drawingPanel.Location = new Point(0, 0);
 			drawingPanel.Name = "drawingPanel";
@@ -43,14 +40,6 @@
 			drawingPanel.TabIndex = 0;
 			drawingPanel.Paint += drawingPanel_Paint;
 			drawingPanel.Resize += drawingPanel_Resize;
-			// 
-			// panel1
-			// 
-			panel1.Dock = DockStyle.Fill;
-			panel1.Location = new Point(0, 0);
-			panel1.Name = "panel1";
-			panel1.Size = new Size(800, 450);
-			panel1.TabIndex = 0;
 			// 
 			// MainForm
 			// 
@@ -60,14 +49,12 @@
 			Controls.Add(drawingPanel);
 			Name = "MainForm";
 			StartPosition = FormStartPosition.CenterScreen;
-			Text = "Moje okenko";
-			drawingPanel.ResumeLayout(false);
+			Text = "Moje okénko";
 			ResumeLayout(false);
 		}
 
 		#endregion
 
 		private Panel drawingPanel;
-		private Panel panel1;
 	}
 }
