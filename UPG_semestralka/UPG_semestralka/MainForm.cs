@@ -133,6 +133,8 @@ namespace UPG_semestralka
 			g.FillEllipse(new SolidBrush(chargeColor), x - size / 2, y - size / 2, size, size);
 			g.DrawEllipse(new Pen(Color.Black, 2), x - size / 2, y - size / 2, size, size);
 
+
+
 			string chargeText = $"{charge} C";
 			Font chargeFont = new Font("Arial", (float)(10 * scale / 100), FontStyle.Bold);
 			SizeF textSize = g.MeasureString(chargeText, chargeFont);
