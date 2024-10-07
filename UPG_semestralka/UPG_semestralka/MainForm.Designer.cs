@@ -28,11 +28,13 @@
 		/// </summary>
 		private void InitializeComponent()
 		{
+			components = new System.ComponentModel.Container();
 			drawingPanel = new Panel();
 			btnScenario3 = new Button();
 			btnScenario2 = new Button();
 			btnScenario1 = new Button();
 			btnScenario0 = new Button();
+			timer = new System.Windows.Forms.Timer(components);
 			drawingPanel.SuspendLayout();
 			SuspendLayout();
 			// 
@@ -90,6 +92,11 @@
 			btnScenario0.UseVisualStyleBackColor = true;
 			btnScenario0.Click += btnScenario0_Click;
 			// 
+			// timer
+			// 
+			timer.Interval = 10;
+			timer.Tick += timer_Tick;
+			// 
 			// MainForm
 			// 
 			AutoScaleDimensions = new SizeF(7F, 15F);
@@ -110,5 +117,6 @@
 		private Button btnScenario3;
 		private Button btnScenario2;
 		private Button btnScenario1;
+		private System.Windows.Forms.Timer timer;
 	}
 }
