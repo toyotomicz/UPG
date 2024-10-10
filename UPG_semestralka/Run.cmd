@@ -1,0 +1,1 @@
+./bin/UPG_semestralka.exe %*

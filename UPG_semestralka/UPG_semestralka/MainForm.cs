@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Drawing;
+using System.Drawing.Drawing2D;
 using System.Linq;
 using System.Windows.Forms;
 using static System.Windows.Forms.VisualStyles.VisualStyleElement.TaskbarClock;
@@ -9,27 +10,27 @@ namespace UPG_semestralka
 {
 	public partial class MainForm : Form
 	{
-		private int scenario;
+		private int scenario; //scenar ziskany z argumentu
 		private const double k = 8.99e9; // Coulombova konstanta
-		private List<(PointF position, int charge)> charges;
-		private PointF probePosition;
+		private List<(PointF position, int charge)> charges; //pozice a naboje jednotlivych castic
+		private PointF probePosition;  //pozice sondy
 
-		// Hranice "reálného světa" v metrech
+		// Hranice "reálného světa"
 		private double x_min, x_max, y_min, y_max;
 		private double world_width, world_height;
 
 		private double time = 0;
-		private const double angularVelocity = Math.PI / 6;
+		private const double angularVelocity = Math.PI / 6; //uhlova rychlost sondy
 
 		public MainForm(int scenario)
 		{
 			InitializeComponent();
-			this.MinimumSize = new Size(800, 800);
+			this.MinimumSize = new Size(800, 600);
 			this.scenario = scenario;
 			InitializeWorld();
 			UpdateTitle();
 
-			timer.Interval = 200;
+			timer.Interval = 500; //doba za jak dlouho v ms se obnovi snimek
 			timer.Tick += timer_Tick;
 			timer.Start();
 		}
@@ -61,13 +62,13 @@ namespace UPG_semestralka
 			probePosition = new PointF(0, 1);
 			UpdateProbePosition();
 
+			UpdateTitle();
+
 			// Nastavení hranic světa
-			var positions = charges.Select(c => c.position).ToList();
-			positions.Add(probePosition);
-			x_min = - 2;
-			x_max = + 2;
-			y_min = - 2;
-			y_max = + 2;
+			x_min = -2;
+			x_max = +2;
+			y_min = -2;
+			y_max = +2;
 			world_width = x_max - x_min;
 			world_height = y_max - y_min;
 		}
@@ -89,7 +90,7 @@ namespace UPG_semestralka
 			// Kreslení mřížky
 			DrawGrid(g, scale);
 
-			// Kreslení nábojů
+			// Kreslení vsech nábojů daneho scenare
 			foreach (var charge in charges)
 			{
 				DrawCharge(g, charge.position, charge.charge, scale);
@@ -102,8 +103,8 @@ namespace UPG_semestralka
 
 		private void DrawGrid(Graphics g, double scale)
 		{
-			Pen gridPen = new Pen(Color.LightGray, 1);
-			float gridSpacing = (float)(0.125 * scale); // 0.25 rozestup mezi čarami
+			Pen gridPen = new Pen(Color.LightGray, 1); //sede linky
+			float gridSpacing = (float)(0.125 * scale); // 0.125 rozestup mezi čarami
 
 			for (float x = 0; x <= drawingPanel.Width; x += gridSpacing)
 			{
@@ -115,7 +116,7 @@ namespace UPG_semestralka
 				g.DrawLine(gridPen, 0, y, drawingPanel.Width, y);
 			}
 
-			// Zvýraznění os
+			// Zvýraznění hlavnich os x a y
 			Pen axisPen = new Pen(Color.Black, 2);
 			float originX = (float)(-x_min * scale);
 			float originY = (float)((y_max) * scale);
@@ -127,30 +128,56 @@ namespace UPG_semestralka
 		{
 			float x = (float)((position.X - x_min) * scale);
 			float y = (float)((y_max - position.Y) * scale);
-			float size = (float)(Math.Abs(charge) * 0.25 * scale); // 0.2 metru na jednotku náboje
 
-			Color chargeColor = charge > 0 ? Color.Red : Color.Blue;
-			g.FillEllipse(new SolidBrush(chargeColor), x - size / 2, y - size / 2, size, size);
-			g.DrawEllipse(new Pen(Color.Black, 2), x - size / 2, y - size / 2, size, size);
+			// Výpočet plochy kruhu na základě velikosti náboje
+			float area = (float)(Math.Abs(charge) * 0.2 * scale * scale); // 0.2 m^2 na jednotku náboje
 
+			// Výpočet poloměru z plochy
+			float radius = (float)Math.Sqrt(area / Math.PI);
 
+			float size = radius * 2; // Průměr kruhu
 
+			Color chargeColor = charge > 0 ? Color.Red : Color.Blue; //kladny naboj- cervena, zaporny  - modra
+
+			g.FillEllipse(Brushes.Black, x - size / 2, y - size / 2, size, size); //cerny zaklad
+
+			// Vytvoření cesty pro kruh
+			GraphicsPath path = new GraphicsPath();
+			path.AddEllipse(x - radius, y - radius, size, size);
+
+			// vykresleni barvy naboje gradientem pres cerny zaklad
+			PathGradientBrush pthGrBrush = new PathGradientBrush(path);
+			pthGrBrush.CenterColor = chargeColor;
+			pthGrBrush.SurroundColors = new Color[] { Color.FromArgb(100, chargeColor) };
+			pthGrBrush.FocusScales = new PointF(0.5f, 0.5f);
+
+			// Vykreslení kruhu s vnitřním stínem
+			g.FillPath(pthGrBrush, path);
+
+			// Obrys kruhu
+			g.DrawEllipse(new Pen(Color.Black, 1), x - radius, y - radius, size, size);
+
+			// Text náboje
 			string chargeText = $"{charge} C";
 			Font chargeFont = new Font("Arial", (float)(10 * scale / 100), FontStyle.Bold);
 			SizeF textSize = g.MeasureString(chargeText, chargeFont);
 			g.DrawString(chargeText, chargeFont, Brushes.White, x - textSize.Width / 2, y - textSize.Height / 2);
+
+			// Uvolnění zdrojů
+			path.Dispose();
+			pthGrBrush.Dispose();
 		}
 
 		private void DrawProbe(Graphics g, PointF position, Vector2D forceVector, double scale)
 		{
 			float x = (float)((position.X - x_min) * scale);
 			float y = (float)((y_max - position.Y) * scale);
-			float probeSize = (float)(0.1 * scale); // 0.1 metru
+			float probeSize = (float)(0.1 * scale); // 0.1 velikosti velka sonda
 
 			g.FillEllipse(Brushes.Green, x - probeSize / 2, y - probeSize / 2, probeSize, probeSize);
 
-			// Kreslení vektoru síly
-			float arrowLength = (float)(0.5 * scale); // Škálování síly pro vizualizaci
+			// Kreslení smeru síly
+			float arrowLength = (float)(0.5 * scale); // Škálování sipky pro vizualizaci
 			float angleRad = (float)Math.Atan2(-forceVector.Y, forceVector.X);
 			PointF arrowEnd = new PointF(
 				x + arrowLength * (float)Math.Cos(angleRad),
@@ -161,8 +188,9 @@ namespace UPG_semestralka
 			g.DrawLine(arrowPen, x, y, arrowEnd.X, arrowEnd.Y);
 			DrawArrowHead(g, arrowPen, new PointF(x, y), arrowEnd, (float)(0.1 * scale));
 
-			string forceText = $"{forceVector.Magnitude():0.00} N/C";
-			Font forceFont = new Font("Arial", (float)(12 * scale / 100), FontStyle.Regular);
+			//text udavajici velikost naboje v miste sondy
+			string forceText = $"{forceVector.Magnitude():E2} N/C";
+			Font forceFont = new Font("Arial", (float)(8 * scale / 100), FontStyle.Regular);
 			g.DrawString(forceText, forceFont, Brushes.Black, x + (float)(0.1 * scale), y - (float)(0.3 * scale));
 		}
 
@@ -185,7 +213,7 @@ namespace UPG_semestralka
 		{
 			Vector2D electricField = new Vector2D(0, 0);
 
-			foreach (var charge in charges) //iterace pres vsechny naboje
+			foreach (var charge in charges) //iterace pres vsechny naboje ve scenari, vypocet dle coulombova zakonu
 			{
 				double q = charge.charge;
 				Vector2D r = new Vector2D(
@@ -242,7 +270,7 @@ namespace UPG_semestralka
 
 		private void timer_Tick(object sender, EventArgs e)
 		{
-			time += timer.Interval / 1000.0; // Převod na sekundy
+			time += timer.Interval / 1000.0; // zveseni casu
 			UpdateProbePosition();
 			this.drawingPanel.Invalidate();
 		}
@@ -253,6 +281,17 @@ namespace UPG_semestralka
 				(float)Math.Cos(angle),
 				(float)Math.Sin(angle)
 			);
+		}
+
+		private void radioButton1_CheckedChanged(object sender, EventArgs e)
+		{
+			timer.Start();
+			timer.Interval = 100;
+		}
+
+		private void radioButton0_CheckedChanged(object sender, EventArgs e)
+		{
+			timer.Stop();
 		}
 	}
 }

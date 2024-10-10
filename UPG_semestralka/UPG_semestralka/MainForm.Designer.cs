@@ -30,20 +30,24 @@
 		{
 			components = new System.ComponentModel.Container();
 			drawingPanel = new Panel();
+			panel2 = new Panel();
+			btnScenario0 = new Button();
+			btnScenario1 = new Button();
 			btnScenario3 = new Button();
 			btnScenario2 = new Button();
-			btnScenario1 = new Button();
-			btnScenario0 = new Button();
+			panel1 = new Panel();
+			radioButton0 = new RadioButton();
+			radioButton1 = new RadioButton();
 			timer = new System.Windows.Forms.Timer(components);
 			drawingPanel.SuspendLayout();
+			panel2.SuspendLayout();
+			panel1.SuspendLayout();
 			SuspendLayout();
 			// 
 			// drawingPanel
 			// 
-			drawingPanel.Controls.Add(btnScenario3);
-			drawingPanel.Controls.Add(btnScenario2);
-			drawingPanel.Controls.Add(btnScenario1);
-			drawingPanel.Controls.Add(btnScenario0);
+			drawingPanel.Controls.Add(panel2);
+			drawingPanel.Controls.Add(panel1);
 			drawingPanel.Dock = DockStyle.Fill;
 			drawingPanel.Location = new Point(0, 0);
 			drawingPanel.Name = "drawingPanel";
@@ -51,6 +55,38 @@
 			drawingPanel.TabIndex = 0;
 			drawingPanel.Paint += drawingPanel_Paint;
 			drawingPanel.Resize += drawingPanel_Resize;
+			// 
+			// panel2
+			// 
+			panel2.BackColor = SystemColors.ControlDark;
+			panel2.Controls.Add(btnScenario0);
+			panel2.Controls.Add(btnScenario1);
+			panel2.Controls.Add(btnScenario3);
+			panel2.Controls.Add(btnScenario2);
+			panel2.Location = new Point(3, 3);
+			panel2.Name = "panel2";
+			panel2.Size = new Size(225, 57);
+			panel2.TabIndex = 5;
+			// 
+			// btnScenario0
+			// 
+			btnScenario0.Location = new Point(3, 3);
+			btnScenario0.Name = "btnScenario0";
+			btnScenario0.Size = new Size(50, 50);
+			btnScenario0.TabIndex = 0;
+			btnScenario0.Text = "0";
+			btnScenario0.UseVisualStyleBackColor = true;
+			btnScenario0.Click += btnScenario0_Click;
+			// 
+			// btnScenario1
+			// 
+			btnScenario1.Location = new Point(59, 3);
+			btnScenario1.Name = "btnScenario1";
+			btnScenario1.Size = new Size(50, 50);
+			btnScenario1.TabIndex = 1;
+			btnScenario1.Text = "1";
+			btnScenario1.UseVisualStyleBackColor = true;
+			btnScenario1.Click += btnScenario1_Click;
 			// 
 			// btnScenario3
 			// 
@@ -72,25 +108,39 @@
 			btnScenario2.UseVisualStyleBackColor = true;
 			btnScenario2.Click += btnScenario2_Click;
 			// 
-			// btnScenario1
+			// panel1
 			// 
-			btnScenario1.Location = new Point(59, 3);
-			btnScenario1.Name = "btnScenario1";
-			btnScenario1.Size = new Size(50, 50);
-			btnScenario1.TabIndex = 1;
-			btnScenario1.Text = "1";
-			btnScenario1.UseVisualStyleBackColor = true;
-			btnScenario1.Click += btnScenario1_Click;
+			panel1.BackColor = SystemColors.ControlDark;
+			panel1.Controls.Add(radioButton0);
+			panel1.Controls.Add(radioButton1);
+			panel1.Location = new Point(234, 6);
+			panel1.Name = "panel1";
+			panel1.Size = new Size(84, 50);
+			panel1.TabIndex = 4;
 			// 
-			// btnScenario0
+			// radioButton0
 			// 
-			btnScenario0.Location = new Point(3, 3);
-			btnScenario0.Name = "btnScenario0";
-			btnScenario0.Size = new Size(50, 50);
-			btnScenario0.TabIndex = 0;
-			btnScenario0.Text = "0";
-			btnScenario0.UseVisualStyleBackColor = true;
-			btnScenario0.Click += btnScenario0_Click;
+			radioButton0.AutoSize = true;
+			radioButton0.Location = new Point(3, 16);
+			radioButton0.Name = "radioButton0";
+			radioButton0.Size = new Size(37, 19);
+			radioButton0.TabIndex = 1;
+			radioButton0.TabStop = true;
+			radioButton0.Text = "0x";
+			radioButton0.UseVisualStyleBackColor = true;
+			radioButton0.CheckedChanged += radioButton0_CheckedChanged;
+			// 
+			// radioButton1
+			// 
+			radioButton1.AutoSize = true;
+			radioButton1.Location = new Point(46, 16);
+			radioButton1.Name = "radioButton1";
+			radioButton1.Size = new Size(37, 19);
+			radioButton1.TabIndex = 0;
+			radioButton1.TabStop = true;
+			radioButton1.Text = "1x";
+			radioButton1.UseVisualStyleBackColor = true;
+			radioButton1.CheckedChanged += radioButton1_CheckedChanged;
 			// 
 			// timer
 			// 
@@ -107,6 +157,9 @@
 			StartPosition = FormStartPosition.CenterScreen;
 			Text = "Vizualizace elektrostatického pole";
 			drawingPanel.ResumeLayout(false);
+			panel2.ResumeLayout(false);
+			panel1.ResumeLayout(false);
+			panel1.PerformLayout();
 			ResumeLayout(false);
 		}
 
@@ -118,5 +171,9 @@
 		private Button btnScenario2;
 		private Button btnScenario1;
 		private System.Windows.Forms.Timer timer;
+		private Panel panel2;
+		private Panel panel1;
+		private RadioButton radioButton1;
+		private RadioButton radioButton0;
 	}
 }
