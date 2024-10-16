@@ -8,14 +8,20 @@ namespace UPG_semestralka
 		[STAThread]
 		static void Main(string[] args)
 		{
-			// To customize application configuration such as set high DPI settings or default font,
-			// see https://aka.ms/applicationconfiguration.
 			ApplicationConfiguration.Initialize();
-			int scenario = 0;
-			if (args[0] != null && Convert.ToInt32(args[0]) < 4)
+
+			int scenario = 0; // Výchozí hodnota.
+
+			if (args.Length > 0)
 			{
-				scenario = Convert.ToInt32(args[0]);
+				int.TryParse(args[0], out scenario); // Pokud neplatný vstup, zùstane 0.
+
+				if (scenario < 0 || scenario > 3)
+				{
+					scenario = 0; // Pokud je mimo rozsah, vrátí se k výchozí hodnotì.
+				}
 			}
+
 			Application.Run(new MainForm(scenario));
 		}
 	}
