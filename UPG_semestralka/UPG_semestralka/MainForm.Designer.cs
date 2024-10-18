@@ -36,6 +36,8 @@
 			btnScenario3 = new Button();
 			btnScenario2 = new Button();
 			panel1 = new Panel();
+			radioButton2 = new RadioButton();
+			radioButton05 = new RadioButton();
 			radioButton0 = new RadioButton();
 			radioButton1 = new RadioButton();
 			timer = new System.Windows.Forms.Timer(components);
@@ -111,17 +113,42 @@
 			// panel1
 			// 
 			panel1.BackColor = SystemColors.ControlDark;
+			panel1.Controls.Add(radioButton2);
+			panel1.Controls.Add(radioButton05);
 			panel1.Controls.Add(radioButton0);
 			panel1.Controls.Add(radioButton1);
 			panel1.Location = new Point(234, 6);
 			panel1.Name = "panel1";
-			panel1.Size = new Size(84, 50);
+			panel1.Size = new Size(198, 50);
 			panel1.TabIndex = 4;
+			// 
+			// radioButton2
+			// 
+			radioButton2.AutoSize = true;
+			radioButton2.Location = new Point(150, 16);
+			radioButton2.Name = "radioButton2";
+			radioButton2.Size = new Size(35, 22);
+			radioButton2.TabIndex = 4;
+			radioButton2.TabStop = true;
+			radioButton2.Text = "2x";
+			radioButton2.UseCompatibleTextRendering = true;
+			radioButton2.UseVisualStyleBackColor = true;
+			// 
+			// radioButton05
+			// 
+			radioButton05.AutoSize = true;
+			radioButton05.Location = new Point(55, 16);
+			radioButton05.Name = "radioButton05";
+			radioButton05.Size = new Size(46, 19);
+			radioButton05.TabIndex = 2;
+			radioButton05.TabStop = true;
+			radioButton05.Text = "0.5x";
+			radioButton05.UseVisualStyleBackColor = true;
 			// 
 			// radioButton0
 			// 
 			radioButton0.AutoSize = true;
-			radioButton0.Location = new Point(3, 16);
+			radioButton0.Location = new Point(12, 16);
 			radioButton0.Name = "radioButton0";
 			radioButton0.Size = new Size(37, 19);
 			radioButton0.TabIndex = 1;
@@ -133,7 +160,7 @@
 			// radioButton1
 			// 
 			radioButton1.AutoSize = true;
-			radioButton1.Location = new Point(46, 16);
+			radioButton1.Location = new Point(107, 16);
 			radioButton1.Name = "radioButton1";
 			radioButton1.Size = new Size(37, 19);
 			radioButton1.TabIndex = 0;
@@ -144,7 +171,6 @@
 			// 
 			// timer
 			// 
-			timer.Interval = 10;
 			timer.Tick += timer_Tick;
 			// 
 			// MainForm
@@ -175,5 +201,7 @@
 		private Panel panel1;
 		private RadioButton radioButton1;
 		private RadioButton radioButton0;
+		private RadioButton radioButton2;
+		private RadioButton radioButton05;
 	}
 }

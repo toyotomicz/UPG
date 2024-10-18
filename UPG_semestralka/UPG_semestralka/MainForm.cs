@@ -22,6 +22,9 @@ namespace UPG_semestralka
 
 		private double time = 0;
 		private const double angularVelocity = Math.PI / 6; // Angular velocity of the probe
+		private double velocityMultiplier = 1.0; // Angular velocity multiplier
+
+		private int timerInterval = 100;
 
 		public MainForm(int scenario)
 		{
@@ -32,6 +35,7 @@ namespace UPG_semestralka
 
 			timer.Tick += timer_Tick; // Attach the timer tick event handler
 			timer.Start();
+			timer.Interval = timerInterval;
 
 			// DoubleBuffered = true;
 		}
@@ -333,14 +337,14 @@ namespace UPG_semestralka
 
 		private void timer_Tick(object sender, EventArgs e)
 		{
-			time += timer.Interval / 1000.0; // Increment time
+			time += 50 / 1000.0; // Increment time
 			UpdateProbePosition(); // Update probe position
 			this.drawingPanel.Invalidate(); // Redraw
 		}
 
 		private void UpdateProbePosition()
 		{
-			double angle = angularVelocity * time; // Calculate new angle based on time
+			double angle = angularVelocity * velocityMultiplier * time; // Calculate new angle based on time
 			probePosition = new PointF(
 				(float)Math.Cos(angle), // Update probe's X position
 				(float)Math.Sin(angle)  // Update probe's Y position
@@ -349,13 +353,14 @@ namespace UPG_semestralka
 
 		private void radioButton1_CheckedChanged(object sender, EventArgs e)
 		{
-			timer.Start(); // Start the timer
-			timer.Interval = 100; // Set timer interval
+			velocityMultiplier = 1;
+			timerInterval = 100;
 		}
 
 		private void radioButton0_CheckedChanged(object sender, EventArgs e)
 		{
-			timer.Stop(); // Stop the timer
+			velocityMultiplier = 0;
+			timerInterval = 0;
 		}
 	}
 }
