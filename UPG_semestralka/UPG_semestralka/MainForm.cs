@@ -2,10 +2,10 @@
 using System;
 using System.Collections.Generic;
 using System.Drawing;
-using System.Drawing.Drawing2D;
 using System.Linq;
 using System.Windows.Forms;
 using static System.Windows.Forms.VisualStyles.VisualStyleElement.TaskbarClock;
+using System.Drawing.Printing;
 
 namespace UPG_semestralka
 {
@@ -13,12 +13,15 @@ namespace UPG_semestralka
 	{
 		private int scenario; // Scenario obtained from argument
 		private const double k = 8.99e9; // Coulomb's constant
-		private List<(PointF position, int charge)> charges; // Position and size of each particle's charge
+		private List<(PointF position, Func<double, double> charge)> charges; // Position and size of each particle's charge
 		private PointF probePosition;  // Position of the probe
 
 		// Boundaries of the "real world"
 		private double x_min, x_max, y_min, y_max;
 		private double world_width, world_height;
+
+		private int gridSpacingX;
+		private int gridSpacingY;
 
 		private double time = 0;
 		private const double angularVelocity = Math.PI / 6; // Angular velocity of the probe
@@ -26,48 +29,60 @@ namespace UPG_semestralka
 
 		private int timerInterval = 100;
 
-		public MainForm(int scenario)
+		private PrintDocument printDocument;
+
+		public MainForm(int scenario, int gridSpacingX, int gridSpacingY)
 		{
 			InitializeComponent();
 			this.MinimumSize = new Size(800, 600);
 			this.scenario = scenario;
-			InitializeWorld(); // Initialize world based on the scenario
+			this.gridSpacingX = gridSpacingX;
+			this.gridSpacingY = gridSpacingY;
 
-			timer.Tick += timer_Tick; // Attach the timer tick event handler
+			// Enable double buffering
+			this.SetStyle(
+				ControlStyles.AllPaintingInWmPaint |
+				ControlStyles.UserPaint |
+				ControlStyles.DoubleBuffer,
+				true);
+
+			InitializeWorld();
+
 			timer.Start();
+			timer.Tick += timer_Tick;
 			timer.Interval = timerInterval;
-
-			// DoubleBuffered = true;
 		}
 
 		private void InitializeWorld()
 		{
-			charges = new List<(PointF position, int charge)>();
+			charges = new List<(PointF position, Func<double, double> charge)>();
 			switch (scenario)
 			{
 				case 0:
-					charges.Add((new PointF(0, 0), 1)); // Scenario 0
+					charges.Add((new PointF(0, 0), t => 1));
 					break;
 				case 1:
-					charges.Add((new PointF(-1, 0), 1)); // Scenario 1
-					charges.Add((new PointF(1, 0), 1));
+					charges.Add((new PointF(-1, 0), t => 1));
+					charges.Add((new PointF(1, 0), t => 1));
 					break;
 				case 2:
-					charges.Add((new PointF(-1, 0), -1)); // Scenario 2
-					charges.Add((new PointF(1, 0), 2));
+					charges.Add((new PointF(-1, 0), t => -1));
+					charges.Add((new PointF(1, 0), t => 2));
 					break;
 				case 3:
-					charges.Add((new PointF(-1, -1), 1)); // Scenario 3
-					charges.Add((new PointF(1, -1), 2));
-					charges.Add((new PointF(1, 1), -3));
-					charges.Add((new PointF(-1, 1), -4));
+					charges.Add((new PointF(-1, -1), t => 1));
+					charges.Add((new PointF(1, -1), t => 2));
+					charges.Add((new PointF(1, 1), t => -3));
+					charges.Add((new PointF(-1, 1), t => -4));
+					break;
+				case 4:
+					charges.Add((new PointF(-1, 0), t => 1 + 0.5 * Math.Sin(Math.PI * t / 2)));
+					charges.Add((new PointF(1, 0), t => 1 - 0.5 * Math.Sin(Math.PI * t / 2)));
 					break;
 			}
 
-			probePosition = new PointF(0, 1); // Initial probe position
-			UpdateProbePosition(); // Update probe's position based on initial state
-
-			UpdateTitle();
+			probePosition = new PointF(0, 1);
+			UpdateProbePosition();
 
 			// Set the boundaries of the world
 			x_min = -2;
@@ -76,6 +91,8 @@ namespace UPG_semestralka
 			y_max = +2;
 			world_width = x_max - x_min;
 			world_height = y_max - y_min;
+
+			UpdateTitle();
 		}
 
 		private void UpdateTitle()
@@ -86,31 +103,27 @@ namespace UPG_semestralka
 		private void drawingPanel_Paint(object sender, PaintEventArgs e)
 		{
 			var g = e.Graphics;
+			g.SmoothingMode = SmoothingMode.HighSpeed;
 
-			// Calculate scale based on drawing panel dimensions
 			double scale_x = drawingPanel.Width / world_width;
 			double scale_y = drawingPanel.Height / world_height;
 			double scale = Math.Min(scale_x, scale_y);
 
-			// Compute offsets to center the drawing
 			float offsetX = (float)((drawingPanel.Width - (world_width * scale)) / 2);
 			float offsetY = (float)((drawingPanel.Height - (world_height * scale)) / 2);
 
-			DrawGrid(g, scale); // Draw grid with the calculated scale
+			DrawGrid(g, scale);
 
-			g.TranslateTransform(offsetX, offsetY); // Apply offset for centering
+			g.TranslateTransform(offsetX, offsetY);
 
-			// Draw all charges in the scenario
 			foreach (var charge in charges)
 			{
-				DrawCharge(g, charge.position, charge.charge, scale);
+				DrawCharge(g, charge.position, charge.charge(time), scale);
 			}
 
-			// Calculate and draw the probe with the calculated field intensity
 			Vector2D forceVector = CalculateForceOnProbe(probePosition, charges);
 			DrawProbe(g, probePosition, forceVector, scale);
 
-			// Reset transformation to avoid affecting further drawing
 			g.ResetTransform();
 		}
 
@@ -119,7 +132,6 @@ namespace UPG_semestralka
 			int width = this.ClientSize.Width;
 			int height = this.ClientSize.Height;
 
-			// Calculate center position
 			int centerX = width / 2;
 			int centerY = height / 2;
 
@@ -127,124 +139,76 @@ namespace UPG_semestralka
 			Pen gridPen = new Pen(Color.LightGray, 1);
 
 			// Draw axes
-			g.DrawLine(axisPen, centerX, 0, centerX, height); // Y-axis
-			g.DrawLine(axisPen, 0, centerY, width, centerY); // X-axis
+			g.DrawLine(axisPen, centerX, 0, centerX, height);
+			g.DrawLine(axisPen, 0, centerY, width, centerY);
 
-			int lines = 4; // Lines per 1 unit
-
-			for (int x = centerX; x < width; x += (int)(scale / lines)) // Right side grid
+			// Drawing grid lines with specified spacing
+			for (int x = centerX; x < width; x += gridSpacingX)
 			{
 				g.DrawLine(gridPen, x, 0, x, height);
 			}
 
-			for (int x = centerX; x > 0; x -= (int)(scale / lines)) // Left side grid
+			for (int x = centerX; x > 0; x -= gridSpacingX)
 			{
 				g.DrawLine(gridPen, x, 0, x, height);
 			}
 
-			for (int y = centerY; y < height; y += (int)(scale / lines)) // Bottom side grid
+			for (int y = centerY; y < height; y += gridSpacingY)
 			{
 				g.DrawLine(gridPen, 0, y, width, y);
 			}
 
-			for (int y = centerY; y > 0; y -= (int)(scale / lines)) // Top side grid
+			for (int y = centerY; y > 0; y -= gridSpacingY)
 			{
 				g.DrawLine(gridPen, 0, y, width, y);
 			}
 		}
 
-		//private void DrawStaticProbes(Graphics g, double scale)
-		//{
-		//	float gridSpacing = (float)(0.125 * scale); // 0.125 spacing between lines
-
-		//	for (int x = 0; x <= 500; x += 10)
-		//	{
-		//		PointF position = new PointF(x, x);
-		//		Vector2D forceVectorForThisProbe = CalculateForceOnProbe(position, charges);
-
-		//		DrawStaticProbe(g, position, forceVectorForThisProbe, scale);
-		//	}
-		//}
-
-		private void DrawCharge(Graphics g, PointF position, int charge, double scale)
+		private void DrawCharge(Graphics g, PointF position, double charge, double scale)
 		{
 			float x = (float)((position.X - x_min) * scale);
 			float y = (float)((y_max - position.Y) * scale);
 
-			// Calculate area of circle based on charge size
-			float area = (float)(Math.Abs(charge) * 0.2 * scale * scale); // 0.2 m^2 per charge unit
-
-			// Calculate radius from area
+			float area = (float)(Math.Abs(charge) * 0.2 * scale * scale);
 			float radius = (float)Math.Sqrt(area / Math.PI);
+			float size = radius * 2;
 
-			float size = radius * 2; // Diameter of circle
+			Color chargeColor = charge > 0 ? Color.Red : Color.Blue;
 
-			Color chargeColor = charge > 0 ? Color.Red : Color.Blue; // Positive charge - red, negative - blue
+			g.FillEllipse(Brushes.Black, x - size / 2, y - size / 2, size, size);
 
-			g.FillEllipse(Brushes.Black, x - size / 2, y - size / 2, size, size); // Black base
+			var path = new GraphicsPath();
+			{
+				path.AddEllipse(x - radius, y - radius, size, size);
 
-			// Create path for the circle
-			GraphicsPath path = new GraphicsPath();
-			path.AddEllipse(x - radius, y - radius, size, size);
+				using (PathGradientBrush pthGrBrush = new PathGradientBrush(path))
+				{
+					pthGrBrush.CenterColor = chargeColor;
+					pthGrBrush.SurroundColors = new Color[] { Color.FromArgb(100, chargeColor) };
+					pthGrBrush.FocusScales = new PointF(0.5f, 0.5f);
+					g.FillPath(pthGrBrush, path);
+				}
+			}
 
-			// Draw charge color with gradient over the black base
-			PathGradientBrush pthGrBrush = new PathGradientBrush(path);
-			pthGrBrush.CenterColor = chargeColor;
-			pthGrBrush.SurroundColors = new Color[] { Color.FromArgb(100, chargeColor) };
-			pthGrBrush.FocusScales = new PointF(0.5f, 0.5f);
-
-			// Draw circle with inner shadow
-			g.FillPath(pthGrBrush, path);
-
-			// Circle outline
 			g.DrawEllipse(new Pen(Color.Black, 1), x - radius, y - radius, size, size);
 
-			// Charge label
-			string chargeText = $"{charge} C";
-			Font chargeFont = new Font("Arial", (float)(10 * scale / 100), FontStyle.Bold);
-			SizeF textSize = g.MeasureString(chargeText, chargeFont);
-			g.DrawString(chargeText, chargeFont, Brushes.White, x - textSize.Width / 2, y - textSize.Height / 2);
-
-			// Release resources
-			path.Dispose();
-			pthGrBrush.Dispose();
-		}
-
-		private void DrawStaticProbe(Graphics g, PointF position, Vector2D forceVector, double scale)
-		{
-			float x = (float)((position.X - x_min) * scale);
-			float y = (float)((y_max - position.Y) * scale);
-			float probeSize = (float)(0.1 * scale); // 0.1 size of the large probe
-
-			g.FillEllipse(Brushes.Gray, x - probeSize / 2, y - probeSize / 2, probeSize, probeSize);
-
-			// Draw force direction
-			float angleRad = (float)Math.Atan2(-forceVector.Y, forceVector.X);
-			PointF arrowEnd = new PointF(
-				x * (float)Math.Cos(angleRad),
-				y * (float)Math.Sin(angleRad)
-			);
-
-			Pen arrowPen = new Pen(Color.Gray, (float)(2 * scale / 100));
-			g.DrawLine(arrowPen, x, y, arrowEnd.X, arrowEnd.Y);
-			DrawArrowHead(g, arrowPen, new PointF(x, y), arrowEnd, (float)(0.1 * scale));
-
-			// Text indicating the magnitude of the charge at the probe's location
-			string forceText = $"{forceVector.Magnitude():E2} N/C";
-			Font forceFont = new Font("Arial", (float)(8 * scale / 100), FontStyle.Regular);
-			g.DrawString(forceText, forceFont, Brushes.Black, x + (float)(0.1 * scale), y - (float)(0.3 * scale));
+			string chargeText = scenario == 4 ? $"{charge:F2} C" : $"{charge:F0} C";
+			using (Font chargeFont = new Font("Arial", (float)(10 * scale / 100), FontStyle.Bold))
+			{
+				SizeF textSize = g.MeasureString(chargeText, chargeFont);
+				g.DrawString(chargeText, chargeFont, Brushes.White, x - textSize.Width / 2, y - textSize.Height / 2);
+			}
 		}
 
 		private void DrawProbe(Graphics g, PointF position, Vector2D forceVector, double scale)
 		{
 			float x = (float)((position.X - x_min) * scale);
 			float y = (float)((y_max - position.Y) * scale);
-			float probeSize = (float)(0.1 * scale); // 0.1 size of the large probe
+			float probeSize = (float)(0.1 * scale);
 
 			g.FillEllipse(Brushes.Green, x - probeSize / 2, y - probeSize / 2, probeSize, probeSize);
 
-			// Draw force direction
-			float arrowLength = (float)(0.5 * scale); // Scale arrow for visualization
+			float arrowLength = (float)(0.5 * scale);
 			float angleRad = (float)Math.Atan2(-forceVector.Y, forceVector.X);
 			PointF arrowEnd = new PointF(
 				x + arrowLength * (float)Math.Cos(angleRad),
@@ -255,10 +219,11 @@ namespace UPG_semestralka
 			g.DrawLine(arrowPen, x, y, arrowEnd.X, arrowEnd.Y);
 			DrawArrowHead(g, arrowPen, new PointF(x, y), arrowEnd, (float)(0.1 * scale));
 
-			// Text indicating the magnitude of the charge at the probe's location
 			string forceText = $"{forceVector.Magnitude():E2} N/C";
-			Font forceFont = new Font("Arial", (float)(8 * scale / 100), FontStyle.Regular);
-			g.DrawString(forceText, forceFont, Brushes.Black, x + (float)(0.1 * scale), y - (float)(0.3 * scale));
+			using (Font forceFont = new Font("Arial", (float)(8 * scale / 100), FontStyle.Regular))
+			{
+				g.DrawString(forceText, forceFont, Brushes.Black, x + (float)(0.1 * scale), y - (float)(0.3 * scale));
+			}
 		}
 
 		private void DrawArrowHead(Graphics g, Pen pen, PointF start, PointF end, float size)
@@ -276,20 +241,20 @@ namespace UPG_semestralka
 			g.DrawLine(pen, end, point2);
 		}
 
-		private Vector2D CalculateForceOnProbe(PointF probePosition, List<(PointF position, int charge)> charges)
+		private Vector2D CalculateForceOnProbe(PointF probePosition, List<(PointF position, Func<double, double> charge)> charges)
 		{
 			Vector2D electricField = new Vector2D(0, 0);
 
-			foreach (var charge in charges) // Iterate over all charges in the scenario, calculate according to Coulomb's law
+			foreach (var charge in charges)
 			{
-				double q = charge.charge;
+				double q = charge.charge(time);
 				Vector2D r = new Vector2D(
 					probePosition.X - charge.position.X,
 					probePosition.Y - charge.position.Y
 				);
 				double rMagnitude = r.Magnitude();
 
-				if (rMagnitude == 0) // Prevent division by zero
+				if (rMagnitude == 0)
 				{
 					continue;
 				}
@@ -298,7 +263,7 @@ namespace UPG_semestralka
 				electricField += fieldContribution * (q * k);
 			}
 
-			return electricField; // Return the calculated electric field at the probe's position
+			return electricField;
 		}
 
 		private void drawingPanel_Resize(object sender, EventArgs e)
@@ -335,6 +300,13 @@ namespace UPG_semestralka
 			this.drawingPanel.Invalidate(); // Redraw
 		}
 
+		private void btnScenario4_Click(object sender, EventArgs e)
+		{
+			scenario = 4; // Set scenario 4
+			InitializeWorld(); // Reinitialize world
+			this.drawingPanel.Invalidate(); // Redraw
+		}
+
 		private void timer_Tick(object sender, EventArgs e)
 		{
 			time += 50 / 1000.0; // Increment time
@@ -361,6 +333,42 @@ namespace UPG_semestralka
 		{
 			velocityMultiplier = 0;
 			timerInterval = 0;
+		}
+
+		private void buttonPrint_Click(object sender, EventArgs e)
+		{
+			PrintDialog printDialog = new PrintDialog
+			{
+				Document = printDocument
+			};
+
+			if (printDialog.ShowDialog() == DialogResult.OK)
+			{
+				printDocument1.Print();
+			}
+		}
+
+		private void printDocument1_PrintPage(object sender, System.Drawing.Printing.PrintPageEventArgs e)
+		{
+			Graphics g = e.Graphics;
+
+			// Redraw the charges and probe on the print document
+			double scale_x = e.PageBounds.Width / world_width;
+			double scale_y = e.PageBounds.Height / world_height;
+			double scale = Math.Min(scale_x, scale_y);
+
+			float offsetX = (float)((e.PageBounds.Width - (world_width * scale)) / 2);
+			float offsetY = (float)((e.PageBounds.Height - (world_height * scale)) / 2);
+
+			g.TranslateTransform(offsetX, offsetY);
+
+			foreach (var charge in charges)
+			{
+				//DrawCharge(g, charge.position, charge.charge, scale);
+			}
+
+			Vector2D forceVector = CalculateForceOnProbe(probePosition, charges);
+			DrawProbe(g, probePosition, forceVector, scale);
 		}
 	}
 }

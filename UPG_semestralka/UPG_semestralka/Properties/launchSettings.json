@@ -1,7 +1,8 @@
 {
   "profiles": {
     "UPG_semestralka": {
-      "commandName": "Project"
+      "commandName": "Project",
+      "commandLineArgs": "2 -g50x50"
     }
   }
 }

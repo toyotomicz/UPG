@@ -1,28 +1,42 @@
+using System.Text.RegularExpressions;
+
 namespace UPG_semestralka
 {
 	internal static class Program
 	{
-		/// <summary>
-		///  The main entry point for the application.
-		/// </summary>
 		[STAThread]
 		static void Main(string[] args)
 		{
 			ApplicationConfiguration.Initialize();
 
-			int scenario = 0; // Výchozí hodnota.
+			int scenario = 0; // Výchozí hodnota pro scénáø.
+			int gridSpacingX = 50; // Výchozí rozteè v ose x
+			int gridSpacingY = 50; // Výchozí rozteè v ose y
 
-			if (args.Length > 0)
+			// Kontrola argumentù
+			foreach (var arg in args)
 			{
-				int.TryParse(args[0], out scenario); // Pokud neplatný vstup, zùstane 0.
-
-				if (scenario < 0 || scenario > 3)
+				if (int.TryParse(arg, out int parsedScenario))
 				{
-					scenario = 0; // Pokud je mimo rozsah, vrátí se k výchozí hodnotì.
+					scenario = parsedScenario; // První argument je scénáø.
+					if (scenario < 0 || scenario > 3)
+					{
+						scenario = 0; // Pokud je mimo rozsah, vrátí se k výchozí hodnotì.
+					}
+				}
+				else
+				{
+					// Rozpoznání argumentu -g<X>x<Y> pro rozteè møížky
+					var match = Regex.Match(arg, @"^-g(\d+)x(\d+)$");
+					if (match.Success)
+					{
+						gridSpacingX = int.Parse(match.Groups[1].Value);
+						gridSpacingY = int.Parse(match.Groups[2].Value);
+					}
 				}
 			}
 
-			Application.Run(new MainForm(scenario));
+			Application.Run(new MainForm(scenario, gridSpacingX, gridSpacingY));
 		}
 	}
 }

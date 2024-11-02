@@ -29,7 +29,9 @@
 		private void InitializeComponent()
 		{
 			components = new System.ComponentModel.Container();
+			System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(MainForm));
 			drawingPanel = new Panel();
+			buttonPrint = new Button();
 			panel2 = new Panel();
 			btnScenario0 = new Button();
 			btnScenario1 = new Button();
@@ -41,6 +43,9 @@
 			radioButton0 = new RadioButton();
 			radioButton1 = new RadioButton();
 			timer = new System.Windows.Forms.Timer(components);
+			printDocument1 = new System.Drawing.Printing.PrintDocument();
+			printPreviewDialog1 = new PrintPreviewDialog();
+			btnScenario4 = new Button();
 			drawingPanel.SuspendLayout();
 			panel2.SuspendLayout();
 			panel1.SuspendLayout();
@@ -48,6 +53,7 @@
 			// 
 			// drawingPanel
 			// 
+			drawingPanel.Controls.Add(buttonPrint);
 			drawingPanel.Controls.Add(panel2);
 			drawingPanel.Controls.Add(panel1);
 			drawingPanel.Dock = DockStyle.Fill;
@@ -58,16 +64,27 @@
 			drawingPanel.Paint += drawingPanel_Paint;
 			drawingPanel.Resize += drawingPanel_Resize;
 			// 
+			// buttonPrint
+			// 
+			buttonPrint.Location = new Point(578, 22);
+			buttonPrint.Name = "buttonPrint";
+			buttonPrint.Size = new Size(75, 23);
+			buttonPrint.TabIndex = 6;
+			buttonPrint.Text = "Print";
+			buttonPrint.UseVisualStyleBackColor = true;
+			buttonPrint.Click += buttonPrint_Click;
+			// 
 			// panel2
 			// 
 			panel2.BackColor = SystemColors.ControlDark;
+			panel2.Controls.Add(btnScenario4);
 			panel2.Controls.Add(btnScenario0);
 			panel2.Controls.Add(btnScenario1);
 			panel2.Controls.Add(btnScenario3);
 			panel2.Controls.Add(btnScenario2);
 			panel2.Location = new Point(3, 3);
 			panel2.Name = "panel2";
-			panel2.Size = new Size(225, 57);
+			panel2.Size = new Size(283, 57);
 			panel2.TabIndex = 5;
 			// 
 			// btnScenario0
@@ -117,7 +134,7 @@
 			panel1.Controls.Add(radioButton05);
 			panel1.Controls.Add(radioButton0);
 			panel1.Controls.Add(radioButton1);
-			panel1.Location = new Point(234, 6);
+			panel1.Location = new Point(308, 10);
 			panel1.Name = "panel1";
 			panel1.Size = new Size(198, 50);
 			panel1.TabIndex = 4;
@@ -173,6 +190,30 @@
 			// 
 			timer.Tick += timer_Tick;
 			// 
+			// printDocument1
+			// 
+			printDocument1.PrintPage += printDocument1_PrintPage;
+			// 
+			// printPreviewDialog1
+			// 
+			printPreviewDialog1.AutoScrollMargin = new Size(0, 0);
+			printPreviewDialog1.AutoScrollMinSize = new Size(0, 0);
+			printPreviewDialog1.ClientSize = new Size(400, 300);
+			printPreviewDialog1.Enabled = true;
+			printPreviewDialog1.Icon = (Icon)resources.GetObject("printPreviewDialog1.Icon");
+			printPreviewDialog1.Name = "printPreviewDialog1";
+			printPreviewDialog1.Visible = false;
+			// 
+			// btnScenario4
+			// 
+			btnScenario4.Location = new Point(227, 3);
+			btnScenario4.Name = "btnScenario4";
+			btnScenario4.Size = new Size(50, 50);
+			btnScenario4.TabIndex = 4;
+			btnScenario4.Text = "4";
+			btnScenario4.UseVisualStyleBackColor = true;
+			btnScenario4.Click += btnScenario4_Click;
+			// 
 			// MainForm
 			// 
 			AutoScaleDimensions = new SizeF(7F, 15F);
@@ -203,5 +244,9 @@
 		private RadioButton radioButton0;
 		private RadioButton radioButton2;
 		private RadioButton radioButton05;
+		private Button buttonPrint;
+		private System.Drawing.Printing.PrintDocument printDocument1;
+		private PrintPreviewDialog printPreviewDialog1;
+		private Button btnScenario4;
 	}
 }
