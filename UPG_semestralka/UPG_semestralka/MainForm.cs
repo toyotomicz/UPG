@@ -6,6 +6,10 @@ using System.Linq;
 using System.Windows.Forms;
 using static System.Windows.Forms.VisualStyles.VisualStyleElement.TaskbarClock;
 using System.Drawing.Printing;
+using Microsoft.VisualBasic.Devices;
+using System.Drawing.Imaging;
+using System.Threading.Tasks;
+using System.Reflection;
 
 namespace UPG_semestralka
 {
@@ -39,18 +43,14 @@ namespace UPG_semestralka
 			this.gridSpacingX = gridSpacingX;
 			this.gridSpacingY = gridSpacingY;
 
-			// Enable double buffering
-			this.SetStyle(
-				ControlStyles.AllPaintingInWmPaint |
-				ControlStyles.UserPaint |
-				ControlStyles.DoubleBuffer,
-				true);
+			typeof(Panel).InvokeMember("DoubleBuffered", BindingFlags.SetProperty|BindingFlags.Instance | BindingFlags.NonPublic, 
+				null, drawingPanel, new object[] { true });
 
 			InitializeWorld();
 
 			timer.Start();
 			timer.Tick += timer_Tick;
-			timer.Interval = timerInterval;
+			timer.Interval = 10;
 		}
 
 		private void InitializeWorld()
@@ -113,6 +113,7 @@ namespace UPG_semestralka
 			float offsetY = (float)((drawingPanel.Height - (world_height * scale)) / 2);
 
 			DrawGrid(g, scale);
+			//DrawIntensityMap(g, scale);
 
 			g.TranslateTransform(offsetX, offsetY);
 
@@ -226,6 +227,32 @@ namespace UPG_semestralka
 			}
 		}
 
+		private void DrawStaticProbe(Graphics g, PointF position, Vector2D forceVector, double scale)
+		{
+			float x = (float)((position.X - x_min) * scale);
+			float y = (float)((y_max - position.Y) * scale);
+			float probeSize = (float)(0.05 * scale);
+
+			g.FillEllipse(Brushes.DarkSlateGray, x - probeSize / 2, y - probeSize / 2, probeSize, probeSize);
+
+			float arrowLength = (float)(0.25 * scale);
+			float angleRad = (float)Math.Atan2(-forceVector.Y, forceVector.X);
+			PointF arrowEnd = new PointF(
+				x + arrowLength * (float)Math.Cos(angleRad),
+				y + arrowLength * (float)Math.Sin(angleRad)
+			);
+
+			Pen arrowPen = new Pen(Color.DarkSlateGray, (float)(2 * scale / 100));
+			g.DrawLine(arrowPen, x, y, arrowEnd.X, arrowEnd.Y);
+			DrawArrowHead(g, arrowPen, new PointF(x, y), arrowEnd, (float)(0.1 * scale));
+
+			string forceText = $"{forceVector.Magnitude():E2} N/C";
+			using (Font forceFont = new Font("Arial", (float)(8 * scale / 100), FontStyle.Regular))
+			{
+				//g.DrawString(forceText, forceFont, Brushes.Black, x + (float)(0.1 * scale), y - (float)(0.3 * scale));
+			}
+		}
+
 		private void DrawArrowHead(Graphics g, Pen pen, PointF start, PointF end, float size)
 		{
 			float angle = (float)Math.Atan2(end.Y - start.Y, end.X - start.X);
@@ -309,7 +336,7 @@ namespace UPG_semestralka
 
 		private void timer_Tick(object sender, EventArgs e)
 		{
-			time += 50 / 1000.0; // Increment time
+			time += 0.01; // Increment time 
 			UpdateProbePosition(); // Update probe position
 			this.drawingPanel.Invalidate(); // Redraw
 		}
@@ -370,5 +397,195 @@ namespace UPG_semestralka
 			Vector2D forceVector = CalculateForceOnProbe(probePosition, charges);
 			DrawProbe(g, probePosition, forceVector, scale);
 		}
+
+		private bool isMouseInCharge(Point mousePosition)
+		{
+			// Convert the mouse position on the screen to local coordinates of the drawing panel
+			Point localPosition = drawingPanel.PointToClient(mousePosition);
+
+			// Scale the dimensions to obtain the coordinates in "real world"
+			double scale_x = drawingPanel.Width / world_width;
+			double scale_y = drawingPanel.Height / world_height;
+			double scale = Math.Min(scale_x, scale_y);
+
+			float offsetX = (float)((drawingPanel.Width - (world_width * scale)) / 2);
+			float offsetY = (float)((drawingPanel.Height - (world_height * scale)) / 2);
+
+			// Offset the mouse position to match the origin of the "real world"
+			float worldX = (localPosition.X - offsetX) / (float)scale + (float)x_min;
+			float worldY = (float)y_max - (localPosition.Y - offsetY) / (float)scale;
+
+			// Check if the mouse point is within any charge
+			foreach (var charge in charges)
+			{
+				// Convert the charge position to screen coordinates
+				float x = (float)((charge.position.X - x_min) * scale) + offsetX;
+				float y = (float)((y_max - charge.position.Y) * scale) + offsetY;
+
+				// Calculate the area of the charge on screen based on its magnitude
+				float area = (float)(Math.Abs(charge.charge(time)) * 0.2 * scale * scale);
+				float radius = (float)Math.Sqrt(area / Math.PI);
+
+				// Calculate the distance between the mouse point and the center of the charge
+				float distanceToCharge = (float)Math.Sqrt(Math.Pow(worldX - charge.position.X, 2) + Math.Pow(worldY - charge.position.Y, 2));
+
+				// If the mouse is within the radius of the charge, return true
+				if (distanceToCharge <= radius / scale)
+				{
+					return true;
+				}
+			}
+
+			// If not within any charge, return false
+			return false;
+		}
+
+		private void drawingPanel_MouseClick(object sender, MouseEventArgs e)
+		{
+			double scaleX = drawingPanel.Width / world_width;
+			double scaleY = drawingPanel.Height / world_height;
+			double scale = Math.Min(scaleX, scaleY);
+
+			float offsetX = (float)((drawingPanel.Width - (world_width * scale)) / 2);
+			float offsetY = (float)((drawingPanel.Height - (world_height * scale)) / 2);
+
+			PointF clickPosition = new PointF(
+				(e.X - offsetX) / (float)scale + (float)x_min,
+				(float)y_max - (e.Y - offsetY) / (float)scale
+			);
+
+			// Find the nearest charge within a small radius and increment its charge
+			foreach (var charge in charges)
+			{
+				float chargeX = (float)((charge.position.X - x_min) * scale + offsetX);
+				float chargeY = (float)((y_max - charge.position.Y) * scale + offsetY);
+
+				float radius = (float)Math.Sqrt(Math.Abs(charge.charge(time)) * 0.2 * scale * scale / Math.PI);
+
+				// Check if click is within charge circle
+				if (Math.Pow(e.X - chargeX, 2) + Math.Pow(e.Y - chargeY, 2) <= Math.Pow(radius, 2))
+				{
+					int index = charges.IndexOf(charge);
+					int increment = 0;
+					if (e.Button == MouseButtons.Left) // Left button (incrementing)
+					{
+						if (charge.charge(time) == -1) increment = 2;
+						else increment = 1;
+					}
+					else if (e.Button == MouseButtons.Right) // Right button (decrementing)
+					{
+						if (charge.charge(time) == 1) increment = -2;
+						else increment = -1;
+					}
+					charges[index] = (charge.position, t => charge.charge(t) + increment);
+					drawingPanel.Invalidate(); // Redraw to reflect change
+					break;
+				}
+			}
+		}
+		private void DrawIntensityMap(Graphics g, double scale)
+		{
+			int width = drawingPanel.Width;
+			int height = drawingPanel.Height;
+
+			// Create bitmap with panel dimensions
+			using (Bitmap bitmap = new Bitmap(width, height, PixelFormat.Format32bppArgb))
+			{
+				// Prepare bitmap data for direct byte access
+				BitmapData bmpData = bitmap.LockBits(
+					new Rectangle(0, 0, width, height),
+					ImageLockMode.WriteOnly,
+					PixelFormat.Format32bppArgb
+				);
+
+				try
+				{
+					int stride = bmpData.Stride;
+					IntPtr ptr = bmpData.Scan0;
+
+					// Pre-calculate scale factors and byte array to avoid allocations in the loop
+					double xScale = world_width / (double)width;
+					double yScale = world_height / (double)height;
+
+					byte[] pixelData = new byte[stride * height];
+
+					// Parallel loop for each row of the image
+					Parallel.For(0, height, j =>
+					{
+						int offset = j * stride;
+						double realY = y_max - (j * yScale);
+
+						for (int i = 0; i < width; i++)
+						{
+							// Convert pixel coordinates to world coordinates
+							double realX = x_min + (i * xScale);
+
+							// Calculate electric field intensity at this point
+							Vector2D fieldVector = CalculateForceOnProbe(
+								new PointF((float)realX, (float)realY),
+								charges
+							);
+							double intensity = fieldVector.Magnitude();
+
+							// Map intensity to color and store in pixel array
+							Color color = IntensityToColor(intensity);
+							int index = offset + i * 4;
+
+							pixelData[index] = color.B;     // Blue
+							pixelData[index + 1] = color.G; // Green
+							pixelData[index + 2] = color.R; // Red
+							pixelData[index + 3] = 150;     // Alpha
+						}
+					});
+
+					// Copy pixel data to bitmap
+					System.Runtime.InteropServices.Marshal.Copy(pixelData, 0, ptr, pixelData.Length);
+				}
+				finally
+				{
+					bitmap.UnlockBits(bmpData);
+				}
+
+				// Draw the bitmap
+				g.DrawImage(bitmap, 0, 0);
+			}
+		}
+
+		private Color IntensityToColor(double intensity)
+		{
+			// Use a logarithmic scaling factor for smooth mapping
+			double normalizedIntensity = intensity > 0 ?
+				Math.Log10(1 + intensity) / Math.Log10(1 + 1e11) : 0;
+			normalizedIntensity = Math.Max(0, Math.Min(1, normalizedIntensity));
+
+			// Convert normalized intensity to RGB using a blue-to-red gradient
+			double hue = 240 * (1 - normalizedIntensity);
+			return HSVToRGB(hue, 1, 1);
+		}
+
+		private Color HSVToRGB(double hue, double saturation, double value)
+		{
+			// Simplified color conversion without repeated calculations
+			int hi = Convert.ToInt32(Math.Floor(hue / 60)) % 6;
+			double f = hue / 60 - Math.Floor(hue / 60);
+
+			value *= 255;
+			int v = (int)value;
+			int p = (int)(value * (1 - saturation));
+			int q = (int)(value * (1 - f * saturation));
+			int t = (int)(value * (1 - (1 - f) * saturation));
+
+			return hi switch
+			{
+				0 => Color.FromArgb(v, t, p),
+				1 => Color.FromArgb(q, v, p),
+				2 => Color.FromArgb(p, v, t),
+				3 => Color.FromArgb(p, q, v),
+				4 => Color.FromArgb(t, p, v),
+				_ => Color.FromArgb(v, p, q),
+			};
+		}
+
+
 	}
 }

@@ -33,6 +33,7 @@
 			drawingPanel = new Panel();
 			buttonPrint = new Button();
 			panel2 = new Panel();
+			btnScenario4 = new Button();
 			btnScenario0 = new Button();
 			btnScenario1 = new Button();
 			btnScenario3 = new Button();
@@ -45,7 +46,7 @@
 			timer = new System.Windows.Forms.Timer(components);
 			printDocument1 = new System.Drawing.Printing.PrintDocument();
 			printPreviewDialog1 = new PrintPreviewDialog();
-			btnScenario4 = new Button();
+			backgroundWorker1 = new System.ComponentModel.BackgroundWorker();
 			drawingPanel.SuspendLayout();
 			panel2.SuspendLayout();
 			panel1.SuspendLayout();
@@ -62,13 +63,14 @@
 			drawingPanel.Size = new Size(784, 561);
 			drawingPanel.TabIndex = 0;
 			drawingPanel.Paint += drawingPanel_Paint;
+			drawingPanel.MouseClick += drawingPanel_MouseClick;
 			drawingPanel.Resize += drawingPanel_Resize;
 			// 
 			// buttonPrint
 			// 
-			buttonPrint.Location = new Point(578, 22);
+			buttonPrint.Location = new Point(512, 10);
 			buttonPrint.Name = "buttonPrint";
-			buttonPrint.Size = new Size(75, 23);
+			buttonPrint.Size = new Size(42, 50);
 			buttonPrint.TabIndex = 6;
 			buttonPrint.Text = "Print";
 			buttonPrint.UseVisualStyleBackColor = true;
@@ -86,6 +88,16 @@
 			panel2.Name = "panel2";
 			panel2.Size = new Size(283, 57);
 			panel2.TabIndex = 5;
+			// 
+			// btnScenario4
+			// 
+			btnScenario4.Location = new Point(227, 3);
+			btnScenario4.Name = "btnScenario4";
+			btnScenario4.Size = new Size(50, 50);
+			btnScenario4.TabIndex = 4;
+			btnScenario4.Text = "4";
+			btnScenario4.UseVisualStyleBackColor = true;
+			btnScenario4.Click += btnScenario4_Click;
 			// 
 			// btnScenario0
 			// 
@@ -204,16 +216,6 @@
 			printPreviewDialog1.Name = "printPreviewDialog1";
 			printPreviewDialog1.Visible = false;
 			// 
-			// btnScenario4
-			// 
-			btnScenario4.Location = new Point(227, 3);
-			btnScenario4.Name = "btnScenario4";
-			btnScenario4.Size = new Size(50, 50);
-			btnScenario4.TabIndex = 4;
-			btnScenario4.Text = "4";
-			btnScenario4.UseVisualStyleBackColor = true;
-			btnScenario4.Click += btnScenario4_Click;
-			// 
 			// MainForm
 			// 
 			AutoScaleDimensions = new SizeF(7F, 15F);
@@ -248,5 +250,6 @@
 		private System.Drawing.Printing.PrintDocument printDocument1;
 		private PrintPreviewDialog printPreviewDialog1;
 		private Button btnScenario4;
+		private System.ComponentModel.BackgroundWorker backgroundWorker1;
 	}
 }
