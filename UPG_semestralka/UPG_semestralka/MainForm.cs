@@ -113,6 +113,8 @@ namespace UPG_semestralka
 			float offsetY = (float)((drawingPanel.Height - (world_height * scale)) / 2);
 
 			DrawGrid(g, scale);
+			DrawStaticProbes(g, scale);
+
 			//DrawIntensityMap(g, scale);
 
 			g.TranslateTransform(offsetX, offsetY);
@@ -336,7 +338,7 @@ namespace UPG_semestralka
 
 		private void timer_Tick(object sender, EventArgs e)
 		{
-			time += 0.01; // Increment time 
+			time += 16/1000.0; // Increment time 
 			UpdateProbePosition(); // Update probe position
 			this.drawingPanel.Invalidate(); // Redraw
 		}
@@ -585,7 +587,68 @@ namespace UPG_semestralka
 				_ => Color.FromArgb(v, p, q),
 			};
 		}
+		private void DrawStaticProbes(Graphics g, double scale)
+		{
+			// Get panel dimensions
+			int width = drawingPanel.Width;
+			int height = drawingPanel.Height;
 
+			// Calculate center point of the panel
+			int centerX = width / 2;
+			int centerY = height / 2;
 
+			// Calculate how many grid lines we can fit in each direction from center
+			int numLinesX = Math.Min(centerX / gridSpacingX, width / (2 * gridSpacingX));
+			int numLinesY = Math.Min(centerY / gridSpacingY, height / (2 * gridSpacingY));
+
+			float offsetX = (float)((width - (world_width * scale)) / 2);
+			float offsetY = (float)((height - (world_height * scale)) / 2);
+			offsetX = 0; offsetY = 0;
+			// For each grid intersection
+			for (int i = -numLinesX; i <= numLinesX; i++)
+			{
+				for (int j = -numLinesY; j <= numLinesY; j++)
+				{
+					// Calculate screen coordinates
+					int screenX = centerX + (i * gridSpacingX);
+					int screenY = centerY + (j * gridSpacingY);
+
+					// Convert to world coordinates
+					float worldX = (screenX - offsetX) / (float)scale + (float)x_min;
+					float worldY = (float)y_max - (screenY - offsetY) / (float)scale;
+
+					// Skip if too close to any charge
+					bool tooClose = false;
+					foreach (var charge in charges)
+					{
+						double distance = Math.Sqrt(
+							Math.Pow(worldX - charge.position.X, 2) +
+							Math.Pow(worldY - charge.position.Y, 2)
+						);
+						if (distance < 0.3) // Minimum distance threshold
+						{
+							tooClose = true;
+							break;
+						}
+					}
+
+					if (!tooClose)
+					{
+						PointF probePos = new PointF(worldX, worldY);
+						Vector2D forceVector = CalculateForceOnProbe(probePos, charges);
+
+						// Normalize the force vector for visualization
+						double magnitude = forceVector.Magnitude();
+						if (magnitude > 0)
+						{
+							double normalizedMagnitude = Math.Log10(1 + magnitude) / Math.Log10(1 + 1e11);
+							forceVector = forceVector * (normalizedMagnitude / magnitude);
+						}
+
+						DrawStaticProbe(g, probePos, forceVector, scale);
+					}
+				}
+			}
+		}
 	}
 }

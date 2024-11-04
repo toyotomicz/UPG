@@ -127,7 +127,9 @@ namespace Cv07
 
             this.Background = Bitmap.FromFile(Path.Combine(DATA_ROOT, "Jungle.jpg"));
 
-            drawingPanel.Paint += DrawingPanel_Paint;
+            this.Foreground = Bitmap.FromFile(Path.Combine(DATA_ROOT, "Girl.jpg"));
+
+			drawingPanel.Paint += DrawingPanel_Paint;
 
             bttnSave.Click += BttnSave_Click;
 
@@ -198,8 +200,7 @@ namespace Cv07
 		/// <returns>The transformed version of the image.</returns>        
 		private Image? CreateTransformedBackground(Image? img)
 		{
-			var img_in = img as Bitmap;
-			if (img_in == null)
+			if (img == null || img is not Bitmap img_in)
 				return null;
 
 			var img_out = new Bitmap(img_in.Width, img_in.Height, System.Drawing.Imaging.PixelFormat.Format24bppRgb);
@@ -215,18 +216,20 @@ namespace Cv07
 
 			Marshal.Copy(bpm_in.Scan0, rgb_in, 0, rgb_in.Length);
 
-			for (int y = 0, offset = 0; y < img_in.Height; y++)
+			for (int y = 0; y < img_in.Height; y++)
 			{
-				for (int x = 0, index = offset; x < img_in.Width; x++, index += 3)
-				{
-					byte r = rgb_in[index];
-					byte g = rgb_in[index + 1];
-					byte b = rgb_in[index + 2];
+				int rowStartIn = y * bpm_in.Stride;
+				int rowStartOut = y * bpm_out.Stride;
 
-					byte grayValue = (byte)((2 * r + 7 * g + b) / 10);
-					rgb_out[index] = rgb_out[index + 1] = rgb_out[index + 2] = grayValue;
+				for (int x = 0; x < img_in.Width; x++)
+				{
+					int srcIndex = rowStartIn + x * 3;
+					int destIndex = rowStartOut + (img_in.Width - 1 - x) * 3;
+
+					rgb_out[destIndex] = rgb_in[srcIndex];
+					rgb_out[destIndex + 1] = rgb_in[srcIndex + 1];
+					rgb_out[destIndex + 2] = rgb_in[srcIndex + 2];
 				}
-				offset += bpm_in.Stride;
 			}
 
 			Marshal.Copy(rgb_out, 0, bpm_out.Scan0, rgb_out.Length);
@@ -234,17 +237,9 @@ namespace Cv07
 			img_in.UnlockBits(bpm_in);
 			img_out.UnlockBits(bpm_out);
 
-			// Draw the red circle on img_out
-			using (Graphics g = Graphics.FromImage(img_out))
-			{
-				int radius = img_out.Width / 50;
-				int centerX = (int)(img_out.Width * (467 / 1000.0));
-				int centerY = (int)(img_out.Height * (122 / 689.0));
-				g.FillEllipse(Brushes.Red, centerX - radius, centerY - radius, 2 * radius, 2 * radius);
-			}
-
-			return img_out; // Return the transformed image, not the original one
+			return img_out;
 		}
+
 
 
 		/// <summary>
