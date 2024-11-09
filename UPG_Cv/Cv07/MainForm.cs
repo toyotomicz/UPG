@@ -23,7 +23,7 @@ namespace Cv07
                 {
                     //vytvor vysledny obrazek
                     _finalImage = CreateFinalImage(this.TransformedBackground, 
-                        this.Foreground, this.Alpha);
+                        this.TransformedForeground, this.Alpha);
                 }
                 return _finalImage;
             }
@@ -73,9 +73,27 @@ namespace Cv07
             } 
         }
 
+		private Image? _transformedForeground;
+		/// <summary>
+		/// Gets the transformed background.
+		/// </summary>
+		/// <value>
+		/// The transformed background.
+		/// </value>
+		public Image? TransformedForeground
+		{
+			get
+			{
+				if (this._transformedForeground == null)
+				{
+					this._transformedForeground = CreateTransformedForeground(this.Foreground);
+				}
 
-        
-        private Image? _foreground;
+				return this._transformedForeground;
+			}
+		}
+
+		private Image? _foreground;
 
         /// <summary>
         /// Gets or sets the foreground image.
@@ -90,7 +108,8 @@ namespace Cv07
                 if (_foreground != value)
                 {
                     _foreground = value;
-                    _finalImage = null;
+					_transformedForeground = null;
+					_finalImage = null;
                     this.drawingPanel.Invalidate();
                 }
             }
@@ -211,8 +230,51 @@ namespace Cv07
 			var bpm_out = img_out.LockBits(new Rectangle(0, 0, img_out.Width, img_out.Height),
 				System.Drawing.Imaging.ImageLockMode.WriteOnly, System.Drawing.Imaging.PixelFormat.Format24bppRgb);
 
+			byte[] rgb_in = new byte[bpm_in.Height * bpm_in.Stride]; 
+			byte[] rgb_out = new byte[bpm_out.Height * bpm_out.Stride]; 
+
+			Marshal.Copy(bpm_in.Scan0, rgb_in, 0, rgb_in.Length);
+
+			for (int y = 0; y < img_in.Height; y++)
+			{
+				int rowStartIn = y * bpm_in.Stride; 
+				int rowStartOut = y * bpm_out.Stride; 
+
+				for (int x = 0; x < img_in.Width; x++)
+				{
+					int srcIndex = rowStartIn + x * 3;
+					int destIndex = rowStartOut + (img_in.Width - 1 - x) * 3; 
+                    
+					rgb_out[destIndex] = rgb_in[srcIndex]; 
+					rgb_out[destIndex + 1] = rgb_in[srcIndex + 1]; 
+					rgb_out[destIndex + 2] = rgb_in[srcIndex + 2]; 
+				}
+			}
+
+			Marshal.Copy(rgb_out, 0, bpm_out.Scan0, rgb_out.Length);
+
+			img_in.UnlockBits(bpm_in); 
+			img_out.UnlockBits(bpm_out); 
+
+			return img_out;
+		}
+
+		private Image? CreateTransformedForeground(Image? img)
+		{
+			if (img == null || img is not Bitmap img_in)
+				return null;
+
+			// Create output bitmap with ARGB format for transparency
+			var img_out = new Bitmap(img_in.Width, img_in.Height, System.Drawing.Imaging.PixelFormat.Format32bppArgb);
+
+			var bpm_in = img_in.LockBits(new Rectangle(0, 0, img_in.Width, img_in.Height),
+				System.Drawing.Imaging.ImageLockMode.ReadOnly, System.Drawing.Imaging.PixelFormat.Format24bppRgb);
+
+			var bpm_out = img_out.LockBits(new Rectangle(0, 0, img_out.Width, img_out.Height),
+				System.Drawing.Imaging.ImageLockMode.WriteOnly, System.Drawing.Imaging.PixelFormat.Format32bppArgb);
+
 			byte[] rgb_in = new byte[bpm_in.Height * bpm_in.Stride];
-			byte[] rgb_out = new byte[bpm_out.Height * bpm_out.Stride];
+			byte[] rgba_out = new byte[bpm_out.Height * bpm_out.Stride];
 
 			Marshal.Copy(bpm_in.Scan0, rgb_in, 0, rgb_in.Length);
 
@@ -224,21 +286,31 @@ namespace Cv07
 				for (int x = 0; x < img_in.Width; x++)
 				{
 					int srcIndex = rowStartIn + x * 3;
-					int destIndex = rowStartOut + (img_in.Width - 1 - x) * 3;
+					int destIndex = rowStartOut + x * 4;
 
-					rgb_out[destIndex] = rgb_in[srcIndex];
-					rgb_out[destIndex + 1] = rgb_in[srcIndex + 1];
-					rgb_out[destIndex + 2] = rgb_in[srcIndex + 2];
+					rgba_out[destIndex] = rgb_in[srcIndex]; 
+					rgba_out[destIndex + 1] = rgb_in[srcIndex + 1];
+					rgba_out[destIndex + 2] = rgb_in[srcIndex + 2];
+
+					if (rgb_in[srcIndex + 1] > 150)
+					{
+						rgba_out[destIndex + 3] = 0;
+					}
+					else
+					{
+						rgba_out[destIndex + 3] = 255;
+					}
 				}
 			}
 
-			Marshal.Copy(rgb_out, 0, bpm_out.Scan0, rgb_out.Length);
+			Marshal.Copy(rgba_out, 0, bpm_out.Scan0, rgba_out.Length);
 
 			img_in.UnlockBits(bpm_in);
 			img_out.UnlockBits(bpm_out);
 
 			return img_out;
 		}
+
 
 
 
@@ -268,7 +340,7 @@ namespace Cv07
             //mame TransformedBackground i Foreground
             //TODO: BONUS = merge TransformedBackground a Foreground do noveho obrazku 
             //(s moznym vyuzitim alpha) - ten pak se vratit na vystup
-
+            return fgnd;
             return bkgnd;
         }
 

@@ -115,7 +115,7 @@ namespace UPG_semestralka
 			DrawGrid(g, scale);
 			DrawStaticProbes(g, scale);
 
-			//DrawIntensityMap(g, scale);
+			DrawIntensityMap(g, scale);
 
 			g.TranslateTransform(offsetX, offsetY);
 
@@ -247,12 +247,6 @@ namespace UPG_semestralka
 			Pen arrowPen = new Pen(Color.DarkSlateGray, (float)(2 * scale / 100));
 			g.DrawLine(arrowPen, x, y, arrowEnd.X, arrowEnd.Y);
 			DrawArrowHead(g, arrowPen, new PointF(x, y), arrowEnd, (float)(0.1 * scale));
-
-			string forceText = $"{forceVector.Magnitude():E2} N/C";
-			using (Font forceFont = new Font("Arial", (float)(8 * scale / 100), FontStyle.Regular))
-			{
-				//g.DrawString(forceText, forceFont, Brushes.Black, x + (float)(0.1 * scale), y - (float)(0.3 * scale));
-			}
 		}
 
 		private void DrawArrowHead(Graphics g, Pen pen, PointF start, PointF end, float size)
@@ -489,11 +483,11 @@ namespace UPG_semestralka
 		{
 			int width = drawingPanel.Width;
 			int height = drawingPanel.Height;
+			float offsetX = (float)((width - (world_width * scale)) / 2);
+			float offsetY = (float)((height - (world_height * scale)) / 2);
 
-			// Create bitmap with panel dimensions
 			using (Bitmap bitmap = new Bitmap(width, height, PixelFormat.Format32bppArgb))
 			{
-				// Prepare bitmap data for direct byte access
 				BitmapData bmpData = bitmap.LockBits(
 					new Rectangle(0, 0, width, height),
 					ImageLockMode.WriteOnly,
@@ -503,71 +497,79 @@ namespace UPG_semestralka
 				try
 				{
 					int stride = bmpData.Stride;
-					IntPtr ptr = bmpData.Scan0;
-
-					// Pre-calculate scale factors and byte array to avoid allocations in the loop
-					double xScale = world_width / (double)width;
-					double yScale = world_height / (double)height;
-
 					byte[] pixelData = new byte[stride * height];
 
-					// Parallel loop for each row of the image
-					Parallel.For(0, height, j =>
+					const int blockSize = 4;
+
+					// Process pixels in parallel
+					Parallel.For(0, (height + blockSize - 1) / blockSize, j =>
 					{
-						int offset = j * stride;
-						double realY = y_max - (j * yScale);
+						int yStart = j * blockSize;
+						int yEnd = Math.Min(yStart + blockSize, height);
 
-						for (int i = 0; i < width; i++)
+						for (int i = 0; i < (width + blockSize - 1) / blockSize; i++)
 						{
-							// Convert pixel coordinates to world coordinates
-							double realX = x_min + (i * xScale);
+							int xStart = i * blockSize;
+							int xEnd = Math.Min(xStart + blockSize, width);
 
-							// Calculate electric field intensity at this point
+							// Convert screen coordinates to world coordinates
+							float worldX = ((xStart - offsetX) / (float)scale) + (float)x_min;
+							float worldY = (float)y_max - ((yStart - offsetY) / (float)scale);
+
+							// Calculate field vector in world coordinates
 							Vector2D fieldVector = CalculateForceOnProbe(
-								new PointF((float)realX, (float)realY),
+								new PointF(worldX, worldY),
 								charges
 							);
-							double intensity = fieldVector.Magnitude();
 
-							// Map intensity to color and store in pixel array
-							Color color = IntensityToColor(intensity);
-							int index = offset + i * 4;
+							Color color = IntensityToColor(fieldVector.Magnitude());
 
-							pixelData[index] = color.B;     // Blue
-							pixelData[index + 1] = color.G; // Green
-							pixelData[index + 2] = color.R; // Red
-							pixelData[index + 3] = 150;     // Alpha
+							// Fill block with calculated color
+							for (int y = yStart; y < yEnd; y++)
+							{
+								int rowOffset = y * stride;
+								for (int x = xStart; x < xEnd; x++)
+								{
+									int index = rowOffset + x * 4;
+									if (index < pixelData.Length - 4)
+									{
+										pixelData[index] = color.B;
+										pixelData[index + 1] = color.G;
+										pixelData[index + 2] = color.R;
+										pixelData[index + 3] = 255;
+									}
+								}
+							}
 						}
 					});
 
-					// Copy pixel data to bitmap
-					System.Runtime.InteropServices.Marshal.Copy(pixelData, 0, ptr, pixelData.Length);
+					System.Runtime.InteropServices.Marshal.Copy(pixelData, 0, bmpData.Scan0, pixelData.Length);
 				}
 				finally
 				{
 					bitmap.UnlockBits(bmpData);
 				}
 
-				// Draw the bitmap
 				g.DrawImage(bitmap, 0, 0);
 			}
 		}
 
+
 		private Color IntensityToColor(double intensity)
 		{
-			// Use a logarithmic scaling factor for smooth mapping
-			double normalizedIntensity = intensity > 0 ?
-				Math.Log10(1 + intensity) / Math.Log10(1 + 1e11) : 0;
+			// Handle negative intensities by inverting the color gradient
+			double normalizedIntensity = intensity > 0 ?	Math.Log10(1 + intensity) / Math.Log10(1 + 1e13) : 0;
+
 			normalizedIntensity = Math.Max(0, Math.Min(1, normalizedIntensity));
 
 			// Convert normalized intensity to RGB using a blue-to-red gradient
-			double hue = 240 * (1 - normalizedIntensity);
+			double hue = 500 * normalizedIntensity; // Invert hue for negative intensities
 			return HSVToRGB(hue, 1, 1);
 		}
 
 		private Color HSVToRGB(double hue, double saturation, double value)
 		{
-			// Simplified color conversion without repeated calculations
+			// Simple color conversion
 			int hi = Convert.ToInt32(Math.Floor(hue / 60)) % 6;
 			double f = hue / 60 - Math.Floor(hue / 60);
 
@@ -603,19 +605,22 @@ namespace UPG_semestralka
 
 			float offsetX = (float)((width - (world_width * scale)) / 2);
 			float offsetY = (float)((height - (world_height * scale)) / 2);
-			offsetX = 0; offsetY = 0;
+
+			// Apply transform once before the loop
+			g.TranslateTransform(offsetX, offsetY);
+
 			// For each grid intersection
 			for (int i = -numLinesX; i <= numLinesX; i++)
 			{
 				for (int j = -numLinesY; j <= numLinesY; j++)
 				{
-					// Calculate screen coordinates
-					int screenX = centerX + (i * gridSpacingX);
-					int screenY = centerY + (j * gridSpacingY);
+					// Calculate screen coordinates (without offset since we're using transform)
+					int screenX = centerX + (i * gridSpacingX) - (int)offsetX;
+					int screenY = centerY + (j * gridSpacingY) - (int)offsetY;
 
 					// Convert to world coordinates
-					float worldX = (screenX - offsetX) / (float)scale + (float)x_min;
-					float worldY = (float)y_max - (screenY - offsetY) / (float)scale;
+					float worldX = screenX / (float)scale + (float)x_min;
+					float worldY = (float)y_max - screenY / (float)scale;
 
 					// Skip if too close to any charge
 					bool tooClose = false;
@@ -649,6 +654,10 @@ namespace UPG_semestralka
 					}
 				}
 			}
+
+			// Reset transform once after the loop
+			g.ResetTransform();
 		}
+
 	}
 }
