@@ -17,7 +17,7 @@ namespace Cv08
 		{
 			InitializeComponent();
 
-			this.Lut = MakeLut(10, 64);
+			this.Lut = MakeLut(10, 120);
 		}
 
 		private const string DATA_FILENAME = "../../../data/mrt8_angio2.raw";
@@ -38,17 +38,18 @@ namespace Cv08
 			{
 				if (i >= max)
 				{
-					clr[i] = Color.Black;
+					clr[i] = Color.FromArgb(255, 255, 0);
 				}
 				else if (i <= min)
 				{
-					clr[i] = Color.FromArgb(255, 255, 0);
+					clr[i] = Color.Black;
 				}
 				else
 				{   //Result = (color2 - color1) * fraction + color1
 					float fraction = (float)(i - min) / (max - min);
-					int[] color1 = [255, 255, 0];
-					int[] color2 = [0, 47, 97];
+
+					int[] color2 = [255, 255, 0];
+					int[] color1 = [0, 47, 97];
 
 					int r = (int)((color2[0] - color1[0]) * fraction + color1[0]);
 					int g = (int)((color2[1] - color1[1]) * fraction + color1[1]);

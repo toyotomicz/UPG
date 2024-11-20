@@ -28,12 +28,23 @@ namespace UPG_semestralka
 		private int gridSpacingY;
 
 		private double time = 0;
-		private const double angularVelocity = Math.PI / 6; // Angular velocity of the probe
-		private double velocityMultiplier = 1.0; // Angular velocity multiplier
-
-		private int timerInterval = 100;
+		private const double ANGULAR_VELOCITY = Math.PI / 6; // π/6 rad/s
+		private double velocityMultiplier = 1.0;
+		private const double FIXED_TIMESTEP = 1.0 / 60.0; // 60 FPS
 
 		private PrintDocument printDocument;
+
+		private bool isDragging = false;
+		private int draggedChargeIndex = -1;
+		private PointF dragOffset;
+
+		private bool hasSecondaryProbe = false;
+		private PointF secondaryProbePosition;
+		private List<(double time, double intensity)> secondaryProbeData = new List<(double time, double intensity)>();
+		private double secondaryProbeStartTime = 0;
+		private GraphForm graphForm;
+		private System.Windows.Forms.Timer graphUpdateTimer;
+		private const int GRAPH_UPDATE_INTERVAL = 50; // Update every 50ms
 
 		public MainForm(int scenario, int gridSpacingX, int gridSpacingY)
 		{
@@ -43,14 +54,24 @@ namespace UPG_semestralka
 			this.gridSpacingX = gridSpacingX;
 			this.gridSpacingY = gridSpacingY;
 
-			typeof(Panel).InvokeMember("DoubleBuffered", BindingFlags.SetProperty|BindingFlags.Instance | BindingFlags.NonPublic, 
+			typeof(Panel).InvokeMember("DoubleBuffered", BindingFlags.SetProperty | BindingFlags.Instance | BindingFlags.NonPublic,
 				null, drawingPanel, new object[] { true });
 
 			InitializeWorld();
 
-			timer.Start();
+			timer.Interval = (int)(FIXED_TIMESTEP * 1000); // Převod na milisekundy
 			timer.Tick += timer_Tick;
-			timer.Interval = 10;
+			timer.Start();
+
+			drawingPanel.MouseDown += drawingPanel_MouseDown;
+			drawingPanel.MouseMove += drawingPanel_MouseMove;
+			drawingPanel.MouseUp += drawingPanel_MouseUp;
+
+			drawingPanel.MouseWheel += drawingPanel_MouseWheel;
+
+			graphUpdateTimer = new System.Windows.Forms.Timer();
+			graphUpdateTimer.Interval = GRAPH_UPDATE_INTERVAL;
+			graphUpdateTimer.Tick += GraphUpdateTimer_Tick;
 		}
 
 		private void InitializeWorld()
@@ -112,10 +133,10 @@ namespace UPG_semestralka
 			float offsetX = (float)((drawingPanel.Width - (world_width * scale)) / 2);
 			float offsetY = (float)((drawingPanel.Height - (world_height * scale)) / 2);
 
+			DrawIntensityMap(g, scale);
 			DrawGrid(g, scale);
 			DrawStaticProbes(g, scale);
-
-			DrawIntensityMap(g, scale);
+			DrawLegend(g, scale);
 
 			g.TranslateTransform(offsetX, offsetY);
 
@@ -126,6 +147,12 @@ namespace UPG_semestralka
 
 			Vector2D forceVector = CalculateForceOnProbe(probePosition, charges);
 			DrawProbe(g, probePosition, forceVector, scale);
+
+			if (hasSecondaryProbe)
+			{
+				Vector2D secondaryForceVector = CalculateForceOnProbe(secondaryProbePosition, charges);
+				DrawSecondaryProbe(g, secondaryProbePosition, secondaryForceVector, scale);
+			}
 
 			g.ResetTransform();
 		}
@@ -138,8 +165,8 @@ namespace UPG_semestralka
 			int centerX = width / 2;
 			int centerY = height / 2;
 
-			Pen axisPen = new Pen(Color.Black, 2);
-			Pen gridPen = new Pen(Color.LightGray, 1);
+			Pen axisPen = new Pen(Color.Black, 4);
+			Pen gridPen = new Pen(Color.Black, 1);
 
 			// Draw axes
 			g.DrawLine(axisPen, centerX, 0, centerX, height);
@@ -332,30 +359,52 @@ namespace UPG_semestralka
 
 		private void timer_Tick(object sender, EventArgs e)
 		{
-			time += 16/1000.0; // Increment time 
-			UpdateProbePosition(); // Update probe position
-			this.drawingPanel.Invalidate(); // Redraw
+			// Přidání fixního časového kroku pro konzistentní simulaci
+			if (velocityMultiplier != 0)
+			{
+				time += FIXED_TIMESTEP * velocityMultiplier;
+				UpdateProbePosition();
+				this.drawingPanel.Invalidate();
+			}
+			if (hasSecondaryProbe)
+			{
+				Vector2D force = CalculateForceOnProbe(secondaryProbePosition, charges);
+				secondaryProbeData.Add((time - secondaryProbeStartTime, force.Magnitude()));
+				graphForm?.UpdateData(secondaryProbeData);
+			}
 		}
 
 		private void UpdateProbePosition()
 		{
-			double angle = angularVelocity * velocityMultiplier * time; // Calculate new angle based on time
+			double angle = ANGULAR_VELOCITY * time;
 			probePosition = new PointF(
-				(float)Math.Cos(angle), // Update probe's X position
-				(float)Math.Sin(angle)  // Update probe's Y position
+				(float)(Math.Cos(angle)), // Radius = 1
+				(float)(Math.Sin(angle))
 			);
 		}
 
 		private void radioButton1_CheckedChanged(object sender, EventArgs e)
 		{
-			velocityMultiplier = 1;
-			timerInterval = 100;
+			velocityMultiplier = 1.0;
+			timer.Start();
 		}
 
 		private void radioButton0_CheckedChanged(object sender, EventArgs e)
 		{
-			velocityMultiplier = 0;
-			timerInterval = 0;
+			velocityMultiplier = 0.0;
+			timer.Stop();
+		}
+
+		private void radioButton05_CheckedChanged(object sender, EventArgs e)
+		{
+			velocityMultiplier = 0.5;
+			timer.Start();
+		}
+
+		private void radioButton2_CheckedChanged(object sender, EventArgs e)
+		{
+			velocityMultiplier = 2.0;
+			timer.Start();
 		}
 
 		private void buttonPrint_Click(object sender, EventArgs e)
@@ -373,25 +422,7 @@ namespace UPG_semestralka
 
 		private void printDocument1_PrintPage(object sender, System.Drawing.Printing.PrintPageEventArgs e)
 		{
-			Graphics g = e.Graphics;
-
-			// Redraw the charges and probe on the print document
-			double scale_x = e.PageBounds.Width / world_width;
-			double scale_y = e.PageBounds.Height / world_height;
-			double scale = Math.Min(scale_x, scale_y);
-
-			float offsetX = (float)((e.PageBounds.Width - (world_width * scale)) / 2);
-			float offsetY = (float)((e.PageBounds.Height - (world_height * scale)) / 2);
-
-			g.TranslateTransform(offsetX, offsetY);
-
-			foreach (var charge in charges)
-			{
-				//DrawCharge(g, charge.position, charge.charge, scale);
-			}
-
-			Vector2D forceVector = CalculateForceOnProbe(probePosition, charges);
-			DrawProbe(g, probePosition, forceVector, scale);
+			
 		}
 
 		private bool isMouseInCharge(Point mousePosition)
@@ -436,16 +467,14 @@ namespace UPG_semestralka
 			return false;
 		}
 
-		private void drawingPanel_MouseClick(object sender, MouseEventArgs e)
+		private void drawingPanel_MouseWheel(object sender, MouseEventArgs e)
 		{
 			double scaleX = drawingPanel.Width / world_width;
 			double scaleY = drawingPanel.Height / world_height;
 			double scale = Math.Min(scaleX, scaleY);
-
 			float offsetX = (float)((drawingPanel.Width - (world_width * scale)) / 2);
 			float offsetY = (float)((drawingPanel.Height - (world_height * scale)) / 2);
-
-			PointF clickPosition = new PointF(
+			PointF mousePosition = new PointF(
 				(e.X - offsetX) / (float)scale + (float)x_min,
 				(float)y_max - (e.Y - offsetY) / (float)scale
 			);
@@ -455,24 +484,27 @@ namespace UPG_semestralka
 			{
 				float chargeX = (float)((charge.position.X - x_min) * scale + offsetX);
 				float chargeY = (float)((y_max - charge.position.Y) * scale + offsetY);
-
 				float radius = (float)Math.Sqrt(Math.Abs(charge.charge(time)) * 0.2 * scale * scale / Math.PI);
 
-				// Check if click is within charge circle
+				// Check if mouse is over charge circle
 				if (Math.Pow(e.X - chargeX, 2) + Math.Pow(e.Y - chargeY, 2) <= Math.Pow(radius, 2))
 				{
 					int index = charges.IndexOf(charge);
 					int increment = 0;
-					if (e.Button == MouseButtons.Left) // Left button (incrementing)
+
+					// Determine increment based on scroll direction
+					// Positive Delta means scrolling up, negative means scrolling down
+					if (e.Delta > 0) // Scrolling up (incrementing)
 					{
 						if (charge.charge(time) == -1) increment = 2;
 						else increment = 1;
 					}
-					else if (e.Button == MouseButtons.Right) // Right button (decrementing)
+					else // Scrolling down (decrementing)
 					{
 						if (charge.charge(time) == 1) increment = -2;
 						else increment = -1;
 					}
+
 					charges[index] = (charge.position, t => charge.charge(t) + increment);
 					drawingPanel.Invalidate(); // Redraw to reflect change
 					break;
@@ -499,7 +531,7 @@ namespace UPG_semestralka
 					int stride = bmpData.Stride;
 					byte[] pixelData = new byte[stride * height];
 
-					const int blockSize = 4;
+					const int blockSize = 20;
 
 					// Process pixels in parallel
 					Parallel.For(0, (height + blockSize - 1) / blockSize, j =>
@@ -553,23 +585,21 @@ namespace UPG_semestralka
 				g.DrawImage(bitmap, 0, 0);
 			}
 		}
-
-
 		private Color IntensityToColor(double intensity)
 		{
-			// Handle negative intensities by inverting the color gradient
-			double normalizedIntensity = intensity > 0 ?	Math.Log10(1 + intensity) / Math.Log10(1 + 1e13) : 0;
+			double normalizedIntensity = intensity > 0 ? Math.Log10(1 + intensity) / Math.Log10(1 + 1e11) : 1;
 
 			normalizedIntensity = Math.Max(0, Math.Min(1, normalizedIntensity));
 
-			// Convert normalized intensity to RGB using a blue-to-red gradient
-			double hue = 500 * normalizedIntensity; // Invert hue for negative intensities
-			return HSVToRGB(hue, 1, 1);
-		}
 
+			double hue = 360 * (1 - normalizedIntensity);
+			double saturation = 1;
+			double value = 1;
+
+			return HSVToRGB(hue, saturation, value);
+		}
 		private Color HSVToRGB(double hue, double saturation, double value)
 		{
-			// Simple color conversion
 			int hi = Convert.ToInt32(Math.Floor(hue / 60)) % 6;
 			double f = hue / 60 - Math.Floor(hue / 60);
 
@@ -657,6 +687,300 @@ namespace UPG_semestralka
 
 			// Reset transform once after the loop
 			g.ResetTransform();
+		}
+		private void drawingPanel_MouseDown(object sender, MouseEventArgs e)
+		{
+			if (isDragging) return;
+
+			double scaleX = drawingPanel.Width / world_width;
+			double scaleY = drawingPanel.Height / world_height;
+			double scale = Math.Min(scaleX, scaleY);
+
+			float offsetX = (float)((drawingPanel.Width - (world_width * scale)) / 2);
+			float offsetY = (float)((drawingPanel.Height - (world_height * scale)) / 2);
+
+			// Convert screen coordinates to world coordinates
+			PointF worldClick = new PointF(
+				(e.X - offsetX) / (float)scale + (float)x_min,
+				(float)y_max - (e.Y - offsetY) / (float)scale
+			);
+
+			// Find if we clicked on a charge
+			for (int i = 0; i < charges.Count; i++)
+			{
+				var charge = charges[i];
+				double distance = Math.Sqrt(
+					Math.Pow(worldClick.X - charge.position.X, 2) +
+					Math.Pow(worldClick.Y - charge.position.Y, 2)
+				);
+
+				// If click is within charge radius
+				float chargeRadius = (float)Math.Sqrt(Math.Abs(charge.charge(time)) * 0.2);
+				if (distance <= chargeRadius)
+				{
+					isDragging = true;
+					draggedChargeIndex = i;
+					dragOffset = new PointF(
+						worldClick.X - charge.position.X,
+						worldClick.Y - charge.position.Y
+					);
+					break;
+				}
+			}
+		}
+		private void DrawLegend(Graphics g, double scale)
+		{
+			// Dimensions for a compact, visually appealing legend
+			int legendWidth = 40;
+			int legendHeight = 100;
+			int margin = 20;
+			int labelWidth = 70;
+
+			// Positioning legend in the upper-right corner
+			int x = drawingPanel.Width - legendWidth - labelWidth;
+			int y = margin;
+
+			// Draw background with soft color and padding for a cleaner look
+			using (SolidBrush backgroundBrush = new SolidBrush(Color.FromArgb(245, 245, 245)))
+			{
+				g.FillRectangle(backgroundBrush,
+					x - 5, y - 20,  // Slight offset for padding
+					legendWidth + labelWidth + 15,  // Extra space for label
+					legendHeight + 30);  // Extra bottom padding
+			}
+
+			// Create gradient bar for intensity representation
+			using (Bitmap gradientBitmap = new Bitmap(legendWidth, legendHeight))
+			{
+				for (int i = 0; i < legendHeight; i++)
+				{
+					double normalizedIntensity = 1.0 - ((double)i / legendHeight);
+					double intensity = Math.Pow(10, 5 + (normalizedIntensity * 8));
+					Color color = IntensityToColor(intensity);
+
+					using (Graphics bmpG = Graphics.FromImage(gradientBitmap))
+					using (Pen pen = new Pen(color, 1))
+					{
+						bmpG.DrawLine(pen, 0, i, legendWidth - 1, i);
+					}
+				}
+
+				// Draw gradient bitmap onto the main graphics object
+				g.DrawImage(gradientBitmap, x, y);
+
+				// Border with subtle color for a refined look
+				using (Pen borderPen = new Pen(Color.FromArgb(180, 180, 180), 1))
+				{
+					g.DrawRectangle(borderPen, x, y, legendWidth, legendHeight);
+				}
+			}
+
+			// Fonts for title and labels with improved readability
+			using (Font labelFont = new Font("Segoe UI", 7))
+			using (Font titleFont = new Font("Segoe UI", 8, FontStyle.Bold))
+			{
+				double[] intensities = {1e13, 1e11, 1e9, 1e7, 1e5};
+
+				for (int i = 0; i < intensities.Length; i++)
+				{
+					double normalizedY = Math.Log10(intensities[i] / 1e5) / 8.0;
+					int labelY = y + (int)(legendHeight * (1 - normalizedY));
+
+					// Shorter, lighter tick marks for a cleaner look
+					g.DrawLine(Pens.Gray, x + legendWidth, labelY, x + legendWidth + 4, labelY);
+
+					// Format label in scientific notation
+					string label = $"{intensities[i]:E0}";
+					using (SolidBrush textBrush = new SolidBrush(Color.FromArgb(60, 60, 60)))
+					{
+						g.DrawString(label, labelFont, textBrush, x + legendWidth + 6, labelY - 6);
+					}
+				}
+
+				// Title positioned above the legend with clear color and spacing
+				using (SolidBrush titleBrush = new SolidBrush(Color.FromArgb(40, 40, 40)))
+				{
+					g.DrawString("Field Intensity (N/C)", titleFont, titleBrush, x, y - 18);
+				}
+			}
+		}
+		private void drawingPanel_MouseUp(object sender, MouseEventArgs e)
+		{
+			isDragging = false;
+			draggedChargeIndex = -1;
+		}
+		private void drawingPanel_MouseMove(object sender, MouseEventArgs e)
+		{
+			drawingPanel.Invalidate();
+			if (!isDragging || draggedChargeIndex < 0) return;
+
+			double scaleX = drawingPanel.Width / world_width;
+			double scaleY = drawingPanel.Height / world_height;
+			double scale = Math.Min(scaleX, scaleY);
+
+			float offsetX = (float)((drawingPanel.Width - (world_width * scale)) / 2);
+			float offsetY = (float)((drawingPanel.Height - (world_height * scale)) / 2);
+
+			// Convert screen coordinates to world coordinates
+			PointF newWorldPos = new PointF(
+				(e.X - offsetX) / (float)scale + (float)x_min,
+				(float)y_max - (e.Y - offsetY) / (float)scale
+			);
+
+			// Apply the offset from initial click
+			newWorldPos = new PointF(
+				newWorldPos.X - dragOffset.X,
+				newWorldPos.Y - dragOffset.Y
+			);
+
+			// Constrain position within world boundaries
+			newWorldPos.X = Math.Max((float)x_min, Math.Min((float)x_max, newWorldPos.X));
+			newWorldPos.Y = Math.Max((float)y_min, Math.Min((float)y_max, newWorldPos.Y));
+
+			// Update charge position
+			var charge = charges[draggedChargeIndex];
+			charges[draggedChargeIndex] = (newWorldPos, charge.charge);
+
+			// Trigger redraw
+			drawingPanel.Invalidate();
+		}
+		protected override void OnMouseMove(MouseEventArgs e)
+		{
+			base.OnMouseMove(e);
+
+			if (isDragging)
+			{
+				this.Cursor = Cursors.Hand;
+			}
+			else
+			{
+				this.Cursor = isMouseInCharge(Control.MousePosition) ?
+					Cursors.Hand : Cursors.Default;
+			}
+		}
+		private void drawingPanel_DoubleClick(object sender, EventArgs e)
+		{
+			if (!hasSecondaryProbe)
+			{
+				MouseEventArgs me = (MouseEventArgs)e;
+				double scale_x = drawingPanel.Width / world_width;
+				double scale_y = drawingPanel.Height / world_height;
+				double scale = Math.Min(scale_x, scale_y);
+				float offsetX = (float)((drawingPanel.Width - (world_width * scale)) / 2);
+				float offsetY = (float)((drawingPanel.Height - (world_height * scale)) / 2);
+
+				secondaryProbePosition = new PointF(
+					(me.X - offsetX) / (float)scale + (float)x_min,
+					(float)y_max - (me.Y - offsetY) / (float)scale
+				);
+
+				hasSecondaryProbe = true;
+				secondaryProbeStartTime = time;
+				secondaryProbeData.Clear();
+
+				// Create and show the graph form if it doesn't exist
+				if (graphForm == null || graphForm.IsDisposed)
+				{
+					graphForm = new GraphForm();
+					graphForm.FormClosed += (s, args) =>
+					{
+						graphUpdateTimer.Stop();
+						hasSecondaryProbe = false;
+					};
+					graphForm.Show();
+					graphForm.Location = new Point(this.Location.X + this.Width, this.Location.Y);
+				}
+
+				// Start the update timer
+				graphUpdateTimer.Start();
+			}
+		}
+
+		private void GraphUpdateTimer_Tick(object sender, EventArgs e)
+		{
+			if (hasSecondaryProbe && graphForm != null && !graphForm.IsDisposed)
+			{
+				Vector2D force = CalculateForceOnProbe(secondaryProbePosition, charges);
+				double intensity = Math.Sqrt(force.X * force.X + force.Y * force.Y);
+				double currentTime = time - secondaryProbeStartTime;
+
+				secondaryProbeData.Add((currentTime, intensity));
+
+				// Add debug output
+				Console.WriteLine($"Time: {currentTime}, Intensity: {intensity}");
+				Console.WriteLine($"Data points count: {secondaryProbeData.Count}");
+
+				// Update the graph
+				graphForm.UpdateData(new List<(double, double)>(secondaryProbeData));
+			}
+			else
+			{
+				graphUpdateTimer.Stop();
+			}
+		}
+
+		private void DrawSecondaryProbe(Graphics g, PointF position, Vector2D forceVector, double scale)
+		{
+			try
+			{
+				float x = (float)((position.X - x_min) * scale);
+				float y = (float)((y_max - position.Y) * scale);
+				float probeSize = (float)(0.08 * scale);
+
+				// Draw a diamond shape for the secondary probe
+				PointF[] diamond = {
+				new PointF(x, y - probeSize),
+				new PointF(x + probeSize, y),
+				new PointF(x, y + probeSize),
+				new PointF(x - probeSize, y)
+			};
+
+				g.FillPolygon(Brushes.Purple, diamond);
+
+				// Only draw arrow if force vector is not zero
+				if (Math.Abs(forceVector.X) > 1e-10 || Math.Abs(forceVector.Y) > 1e-10)
+				{
+					float arrowLength = (float)(0.3 * scale);
+					float angleRad = (float)Math.Atan2(-forceVector.Y, forceVector.X);
+
+					// Normalize the arrow length based on force magnitude
+					double forceMagnitude = Math.Sqrt(forceVector.X * forceVector.X + forceVector.Y * forceVector.Y);
+					float normalizedLength = (float)(arrowLength * Math.Min(1.0, forceMagnitude / 1e5));
+
+					PointF arrowEnd = new PointF(
+						x + normalizedLength * (float)Math.Cos(angleRad),
+						y + normalizedLength * (float)Math.Sin(angleRad)
+					);
+
+					using (Pen arrowPen = new Pen(Color.Purple, (float)(2 * scale / 100)))
+					{
+						g.DrawLine(arrowPen, x, y, arrowEnd.X, arrowEnd.Y);
+						DrawSecondaryArrowHead(g, arrowPen, new PointF(x, y), arrowEnd, (float)(0.1 * scale));
+					}
+				}
+			}
+			catch (Exception ex)
+			{
+				// Handle or log any drawing errors
+				Console.WriteLine($"Error drawing secondary probe: {ex.Message}");
+			}
+		}
+
+		// Assuming you have this helper method for drawing arrow heads
+		private void DrawSecondaryArrowHead(Graphics g, Pen pen, PointF start, PointF end, float size)
+		{
+			float angle = (float)Math.Atan2(end.Y - start.Y, end.X - start.X);
+			PointF[] arrowHead = new PointF[3];
+
+			arrowHead[0] = end;
+			arrowHead[1] = new PointF(
+				end.X - size * (float)Math.Cos(angle + Math.PI / 6),
+				end.Y - size * (float)Math.Sin(angle + Math.PI / 6));
+			arrowHead[2] = new PointF(
+				end.X - size * (float)Math.Cos(angle - Math.PI / 6),
+				end.Y - size * (float)Math.Sin(angle - Math.PI / 6));
+
+			g.FillPolygon(new SolidBrush(pen.Color), arrowHead);
 		}
 
 	}

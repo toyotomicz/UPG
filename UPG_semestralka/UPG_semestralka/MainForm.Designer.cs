@@ -63,7 +63,11 @@
 			drawingPanel.Size = new Size(784, 561);
 			drawingPanel.TabIndex = 0;
 			drawingPanel.Paint += drawingPanel_Paint;
-			drawingPanel.MouseClick += drawingPanel_MouseClick;
+			drawingPanel.DoubleClick += drawingPanel_DoubleClick;
+			drawingPanel.MouseDown += drawingPanel_MouseDown;
+			drawingPanel.MouseMove += drawingPanel_MouseMove;
+			drawingPanel.MouseUp += drawingPanel_MouseUp;
+			drawingPanel.MouseWheel += drawingPanel_MouseWheel;
 			drawingPanel.Resize += drawingPanel_Resize;
 			// 
 			// buttonPrint
@@ -162,6 +166,7 @@
 			radioButton2.Text = "2x";
 			radioButton2.UseCompatibleTextRendering = true;
 			radioButton2.UseVisualStyleBackColor = true;
+			radioButton2.CheckedChanged += radioButton2_CheckedChanged;
 			// 
 			// radioButton05
 			// 
@@ -173,6 +178,7 @@
 			radioButton05.TabStop = true;
 			radioButton05.Text = "0.5x";
 			radioButton05.UseVisualStyleBackColor = true;
+			radioButton05.CheckedChanged += radioButton05_CheckedChanged;
 			// 
 			// radioButton0
 			// 
