@@ -1,0 +1,116 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg id="SvgGdi_output" width="1e3" height="720" version="1.1" xmlns="http://www.w3.org/2000/svg">
+	<rect id="background" width="100%" height="100%" fill="#fff"/>
+	<g id="root_group" shape-rendering="crispEdges">
+		<g id="flow1">
+		<line transform="translate(200 200)" y2="500" fill="none" stroke="#008000" stroke-miterlimit="9" stroke-width="10"/>
+			<animateTransform
+				attributeName="transform"
+				attributeType="XML"
+				type="rotate"
+				values="0 200 700; -30 200 700; 0 200 700; 30 200 700; 0 200 700"
+				dur="4s"
+				repeatCount="indefinite"
+			/>
+
+			<ellipse transform="translate(200 200)" rx="40" ry="40" fill="#ff0"/>
+			<ellipse transform="translate(200 200)" rx="40" ry="40" fill="none" stroke="#000" stroke-miterlimit="9" stroke-width="3"/>
+			<ellipse transform="translate(305 200)" rx="60" ry="10" fill="#f5f5f5"/>
+			<ellipse transform="translate(305 200)" rx="60" ry="10" fill="none" stroke="#000" stroke-miterlimit="9" stroke-width="3"/>
+			<ellipse transform="matrix(.94 .34 -.34 .94 298.67 235.91)" rx="60" ry="10" fill="#f5f5f5"/>
+			<ellipse transform="matrix(.94 .34 -.34 .94 298.67 235.91)" rx="60" ry="10" fill="none" stroke="#000" stroke-miterlimit="9" stroke-width="3"/>
+			<ellipse transform="matrix(.77 .64 -.64 .77 280.43 267.49)" rx="60" ry="10" fill="#f5f5f5"/>
+			<ellipse transform="matrix(.77 .64 -.64 .77 280.43 267.49)" rx="60" ry="10" fill="none" stroke="#000" stroke-miterlimit="9" stroke-width="3"/>
+			<ellipse transform="matrix(.5 .87 -.87 .5 252.5 290.93)" rx="60" ry="10" fill="#f5f5f5"/>
+			<ellipse transform="matrix(.5 .87 -.87 .5 252.5 290.93)" rx="60" ry="10" fill="none" stroke="#000" stroke-miterlimit="9" stroke-width="3"/>
+			<ellipse transform="matrix(.17 .98 -.98 .17 218.23 303.4)" rx="60" ry="10" fill="#f5f5f5"/>
+			<ellipse transform="matrix(.17 .98 -.98 .17 218.23 303.4)" rx="60" ry="10" fill="none" stroke="#000" stroke-miterlimit="9" stroke-width="3"/>
+			<ellipse transform="matrix(-.17 .98 -.98 -.17 181.77 303.4)" rx="60" ry="10" fill="#f5f5f5"/>
+			<ellipse transform="matrix(-.17 .98 -.98 -.17 181.77 303.4)" rx="60" ry="10" fill="none" stroke="#000" stroke-miterlimit="9" stroke-width="3"/>
+			<ellipse transform="matrix(-.5 .87 -.87 -.5 147.5 290.93)" rx="60" ry="10" fill="#f5f5f5"/>
+			<ellipse transform="matrix(-.5 .87 -.87 -.5 147.5 290.93)" rx="60" ry="10" fill="none" stroke="#000" stroke-miterlimit="9" stroke-width="3"/>
+			<ellipse transform="matrix(-.77 .64 -.64 -.77 119.57 267.49)" rx="60" ry="10" fill="#f5f5f5"/>
+			<ellipse transform="matrix(-.77 .64 -.64 -.77 119.57 267.49)" rx="60" ry="10" fill="none" stroke="#000" stroke-miterlimit="9" stroke-width="3"/>
+			<ellipse transform="matrix(-.94 .34 -.34 -.94 101.33 235.91)" rx="60" ry="10" fill="#f5f5f5"/>
+			<ellipse transform="matrix(-.94 .34 -.34 -.94 101.33 235.91)" rx="60" ry="10" fill="none" stroke="#000" stroke-miterlimit="9" stroke-width="3"/>
+			<ellipse transform="matrix(-1 0 -0 -1 95 200)" rx="60" ry="10" fill="#f5f5f5"/>
+			<ellipse transform="matrix(-1 0 -0 -1 95 200)" rx="60" ry="10" fill="none" stroke="#000" stroke-miterlimit="9" stroke-width="3"/>
+			<ellipse transform="matrix(-.94 -.34 .34 -.94 101.33 164.09)" rx="60" ry="10" fill="#f5f5f5"/>
+			<ellipse transform="matrix(-.94 -.34 .34 -.94 101.33 164.09)" rx="60" ry="10" fill="none" stroke="#000" stroke-miterlimit="9" stroke-width="3"/>
+			<ellipse transform="matrix(-.77 -.64 .64 -.77 119.57 132.51)" rx="60" ry="10" fill="#f5f5f5"/>
+			<ellipse transform="matrix(-.77 -.64 .64 -.77 119.57 132.51)" rx="60" ry="10" fill="none" stroke="#000" stroke-miterlimit="9" stroke-width="3"/>
+			<ellipse transform="matrix(-.5 -.87 .87 -.5 147.5 109.07)" rx="60" ry="10" fill="#f5f5f5"/>
+			<ellipse transform="matrix(-.5 -.87 .87 -.5 147.5 109.07)" rx="60" ry="10" fill="none" stroke="#000" stroke-miterlimit="9" stroke-width="3"/>
+			<ellipse transform="matrix(-.17 -.98 .98 -.17 181.77 96.6)" rx="60" ry="10" fill="#f5f5f5"/>
+			<ellipse transform="matrix(-.17 -.98 .98 -.17 181.77 96.6)" rx="60" ry="10" fill="none" stroke="#000" stroke-miterlimit="9" stroke-width="3"/>
+			<ellipse transform="matrix(.17 -.98 .98 .17 218.23 96.6)" rx="60" ry="10" fill="#f5f5f5"/>
+			<ellipse transform="matrix(.17 -.98 .98 .17 218.23 96.6)" rx="60" ry="10" fill="none" stroke="#000" stroke-miterlimit="9" stroke-width="3"/>
+			<ellipse transform="matrix(.5 -.87 .87 .5 252.5 109.07)" rx="60" ry="10" fill="#f5f5f5"/>
+			<ellipse transform="matrix(.5 -.87 .87 .5 252.5 109.07)" rx="60" ry="10" fill="none" stroke="#000" stroke-miterlimit="9" stroke-width="3"/>
+			<ellipse transform="matrix(.77 -.64 .64 .77 280.43 132.51)" rx="60" ry="10" fill="#f5f5f5"/>
+			<ellipse transform="matrix(.77 -.64 .64 .77 280.43 132.51)" rx="60" ry="10" fill="none" stroke="#000" stroke-miterlimit="9" stroke-width="3"/>
+			<ellipse transform="matrix(.94 -.34 .34 .94 298.67 164.09)" rx="60" ry="10" fill="#f5f5f5"/>
+			<ellipse transform="matrix(.94 -.34 .34 .94 298.67 164.09)" rx="60" ry="10" fill="none" stroke="#000" stroke-miterlimit="9" stroke-width="3"/>
+		</g>
+		<g id="flow2">
+			<animateTransform
+				attributeName="transform"
+				attributeType="XML"
+				type="rotate"
+				values="0 360 700; -30 360 700; 0 360 700; 30 360 700; 0 360 700"
+				dur="4s"
+				repeatCount="indefinite"
+			/>
+		<line transform="matrix(.72 .19 -.19 .72 451.65 340.38)" y2="500" fill="none" stroke="#008000" stroke-miterlimit="9" stroke-width="10"/>
+
+			
+			<ellipse transform="matrix(.72 .19 -.19 .72 451.65 340.38)" rx="40" ry="40" fill="#ff0">
+				
+
+			</ellipse>
+			<ellipse transform="matrix(.72 .19 -.19 .72 451.65 340.38)" rx="40" ry="40" fill="none" stroke="#000" stroke-miterlimit="9" stroke-width="3"/>
+			<ellipse transform="matrix(.72 .19 -.19 .72 527.72 360.76)" rx="60" ry="10" fill="#f5f5f5"/>
+			<ellipse transform="matrix(.72 .19 -.19 .72 527.72 360.76)" rx="60" ry="10" fill="none" stroke="#000" stroke-miterlimit="9" stroke-width="3"/>
+			<ellipse transform="matrix(.61 .43 -.43 .61 516.16 385.55)" rx="60" ry="10" fill="#f5f5f5"/>
+			<ellipse transform="matrix(.61 .43 -.43 .61 516.16 385.55)" rx="60" ry="10" fill="none" stroke="#000" stroke-miterlimit="9" stroke-width="3"/>
+			<ellipse transform="matrix(.43 .61 -.61 .43 496.82 404.89)" rx="60" ry="10" fill="#f5f5f5"/>
+			<ellipse transform="matrix(.43 .61 -.61 .43 496.82 404.89)" rx="60" ry="10" fill="none" stroke="#000" stroke-miterlimit="9" stroke-width="3"/>
+			<ellipse transform="matrix(.19 .72 -.72 .19 472.03 416.44)" rx="60" ry="10" fill="#f5f5f5"/>
+			<ellipse transform="matrix(.19 .72 -.72 .19 472.03 416.44)" rx="60" ry="10" fill="none" stroke="#000" stroke-miterlimit="9" stroke-width="3"/>
+			<ellipse transform="matrix(-.07 .75 -.75 -.07 444.79 418.83)" rx="60" ry="10" fill="#f5f5f5"/>
+			<ellipse transform="matrix(-.07 .75 -.75 -.07 444.79 418.83)" rx="60" ry="10" fill="none" stroke="#000" stroke-miterlimit="9" stroke-width="3"/>
+			<ellipse transform="matrix(-.32 .68 -.68 -.32 418.37 411.75)" rx="60" ry="10" fill="#f5f5f5"/>
+			<ellipse transform="matrix(-.32 .68 -.68 -.32 418.37 411.75)" rx="60" ry="10" fill="none" stroke="#000" stroke-miterlimit="9" stroke-width="3"/>
+			<ellipse transform="matrix(-.53 .53 -.53 -.53 395.97 396.06)" rx="60" ry="10" fill="#f5f5f5"/>
+			<ellipse transform="matrix(-.53 .53 -.53 -.53 395.97 396.06)" rx="60" ry="10" fill="none" stroke="#000" stroke-miterlimit="9" stroke-width="3"/>
+			<ellipse transform="matrix(-.68 .32 -.32 -.68 380.28 373.66)" rx="60" ry="10" fill="#f5f5f5"/>
+			<ellipse transform="matrix(-.68 .32 -.32 -.68 380.28 373.66)" rx="60" ry="10" fill="none" stroke="#000" stroke-miterlimit="9" stroke-width="3"/>
+			<ellipse transform="matrix(-.75 .07 -.07 -.75 373.2 347.24)" rx="60" ry="10" fill="#f5f5f5"/>
+			<ellipse transform="matrix(-.75 .07 -.07 -.75 373.2 347.24)" rx="60" ry="10" fill="none" stroke="#000" stroke-miterlimit="9" stroke-width="3"/>
+			<ellipse transform="matrix(-.72 -.19 .19 -.72 375.58 320)" rx="60" ry="10" fill="#f5f5f5"/>
+			<ellipse transform="matrix(-.72 -.19 .19 -.72 375.58 320)" rx="60" ry="10" fill="none" stroke="#000" stroke-miterlimit="9" stroke-width="3"/>
+			<ellipse transform="matrix(-.61 -.43 .43 -.61 387.14 295.21)" rx="60" ry="10" fill="#f5f5f5"/>
+			<ellipse transform="matrix(-.61 -.43 .43 -.61 387.14 295.21)" rx="60" ry="10" fill="none" stroke="#000" stroke-miterlimit="9" stroke-width="3"/>
+			<ellipse transform="matrix(-.43 -.61 .61 -.43 406.48 275.87)" rx="60" ry="10" fill="#f5f5f5"/>
+			<ellipse transform="matrix(-.43 -.61 .61 -.43 406.48 275.87)" rx="60" ry="10" fill="none" stroke="#000" stroke-miterlimit="9" stroke-width="3"/>
+			<ellipse transform="matrix(-.19 -.72 .72 -.19 431.27 264.31)" rx="60" ry="10" fill="#f5f5f5"/>
+			<ellipse transform="matrix(-.19 -.72 .72 -.19 431.27 264.31)" rx="60" ry="10" fill="none" stroke="#000" stroke-miterlimit="9" stroke-width="3"/>
+			<ellipse transform="matrix(.07 -.75 .75 .07 458.52 261.93)" rx="60" ry="10" fill="#f5f5f5"/>
+			<ellipse transform="matrix(.07 -.75 .75 .07 458.52 261.93)" rx="60" ry="10" fill="none" stroke="#000" stroke-miterlimit="9" stroke-width="3"/>
+			<ellipse transform="matrix(.32 -.68 .68 .32 484.93 269.01)" rx="60" ry="10" fill="#f5f5f5"/>
+			<ellipse transform="matrix(.32 -.68 .68 .32 484.93 269.01)" rx="60" ry="10" fill="none" stroke="#000" stroke-miterlimit="9" stroke-width="3"/>
+			<ellipse transform="matrix(.53 -.53 .53 .53 507.34 284.69)" rx="60" ry="10" fill="#f5f5f5"/>
+			<ellipse transform="matrix(.53 -.53 .53 .53 507.34 284.69)" rx="60" ry="10" fill="none" stroke="#000" stroke-miterlimit="9" stroke-width="3"/>
+			<ellipse transform="matrix(.68 -.32 .32 .68 523.02 307.1)" rx="60" ry="10" fill="#f5f5f5"/>
+			<ellipse transform="matrix(.68 -.32 .32 .68 523.02 307.1)" rx="60" ry="10" fill="none" stroke="#000" stroke-miterlimit="9" stroke-width="3"/>
+			<ellipse transform="matrix(.75 -.07 .07 .75 530.1 333.51)" rx="60" ry="10" fill="#f5f5f5"/>
+			<ellipse transform="matrix(.75 -.07 .07 .75 530.1 333.51)" rx="60" ry="10" fill="none" stroke="#000" stroke-miterlimit="9" stroke-width="3"/>
+		</g>
+		<rect y="700" width="1e3" height="20" fill="#008000"/>
+		<rect y="700" width="1e3" height="20" fill="none" stroke="#008000" stroke-miterlimit="9"/>
+
+		<rect x="700" y="650" width="160" height="60" fill="gray"/>
+		<circle cx="740" cy="710" r="15" fill="black"/>
+		<circle cx="820" cy="710" r="15" fill="black"/>
+	</g>
+</svg>

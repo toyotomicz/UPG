@@ -31,22 +31,23 @@ namespace Cv10
 		/// </summary>
 		private void InitializeComponent()
 		{
-			cartesianChart1 = new LiveChartsCore.SkiaSharpView.WinForms.CartesianChart();
+			chart = new LiveChartsCore.SkiaSharpView.WinForms.CartesianChart();
 			SuspendLayout();
 			// 
-			// cartesianChart1
+			// chart
 			// 
-			cartesianChart1.Location = new Point(92, 60);
-			cartesianChart1.Name = "cartesianChart1";
-			cartesianChart1.Size = new Size(596, 317);
-			cartesianChart1.TabIndex = 0;
+			chart.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
+			chart.Location = new Point(12, 12);
+			chart.Name = "chart";
+			chart.Size = new Size(776, 426);
+			chart.TabIndex = 0;
 			// 
 			// MainForm
 			// 
 			AutoScaleDimensions = new SizeF(7F, 15F);
 			AutoScaleMode = AutoScaleMode.Font;
 			ClientSize = new Size(800, 450);
-			Controls.Add(cartesianChart1);
+			Controls.Add(chart);
 			Name = "MainForm";
 			StartPosition = FormStartPosition.CenterScreen;
 			Text = "Moje okénko";
@@ -55,6 +56,6 @@ namespace Cv10
 
 		#endregion
 
-		private LiveChartsCore.SkiaSharpView.WinForms.CartesianChart cartesianChart1;
+		private LiveChartsCore.SkiaSharpView.WinForms.CartesianChart chart;
 	}
 }

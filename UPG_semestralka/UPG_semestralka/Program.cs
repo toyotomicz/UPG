@@ -7,26 +7,27 @@ namespace UPG_semestralka
 		[STAThread]
 		static void Main(string[] args)
 		{
+			// Inicializace konfigurace aplikace.
 			ApplicationConfiguration.Initialize();
 
-			int scenario = 0; // Výchozí hodnota pro scénáø.
-			int gridSpacingX = 50; // Výchozí rozteè v ose x
-			int gridSpacingY = 50; // Výchozí rozteè v ose y
+			// Výchozí hodnoty.
+			int scenario = 0;
+			int? gridSpacingX = null; // Použijeme nullable typ pro indikaci nezadané hodnoty.
+			int? gridSpacingY = null;
 
-			// Kontrola argumentù
+			// Zpracování argumentù pøíkazové øádky.
 			foreach (var arg in args)
 			{
 				if (int.TryParse(arg, out int parsedScenario))
 				{
-					scenario = parsedScenario; // První argument je scénáø.
+					scenario = parsedScenario;
 					if (scenario < 0 || scenario > 3)
 					{
-						scenario = 0; // Pokud je mimo rozsah, vrátí se k výchozí hodnotì.
+						scenario = 0;
 					}
 				}
 				else
 				{
-					// Rozpoznání argumentu -g<X>x<Y> pro rozteè møížky
 					var match = Regex.Match(arg, @"^-g(\d+)x(\d+)$");
 					if (match.Success)
 					{
@@ -36,6 +37,7 @@ namespace UPG_semestralka
 				}
 			}
 
+			// Spuštìní hlavní formy s parametry.
 			Application.Run(new MainForm(scenario, gridSpacingX, gridSpacingY));
 		}
 	}

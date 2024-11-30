@@ -9,10 +9,10 @@ namespace UPG_semestralka
     public partial class GraphForm : Form
     {
         // Configuration constants
-        private const int MARGIN_LEFT = 70;    // Increased for scientific notation
+        private const int MARGIN_LEFT = 100;
         private const int MARGIN_RIGHT = 30;
         private const int MARGIN_TOP = 30;
-        private const int MARGIN_BOTTOM = 50;  // Increased for better label spacing
+        private const int MARGIN_BOTTOM = 50; 
         private const int TICK_LENGTH = 5;
         private const int TICK_COUNT = 5;
         
@@ -204,7 +204,7 @@ namespace UPG_semestralka
                     var intensityLabelSize = g.MeasureString(intensityLabel, labelFont);
                     
                     matrix.RotateAt(-90,
-                        new PointF(MARGIN_LEFT - 40,
+                        new PointF(MARGIN_LEFT - 85,
                         plotArea.Top + (plotArea.Height + intensityLabelSize.Width) / 2));
                     
                     g.Transform = matrix;

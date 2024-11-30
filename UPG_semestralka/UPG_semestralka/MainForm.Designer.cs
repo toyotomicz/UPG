@@ -31,7 +31,6 @@
 			components = new System.ComponentModel.Container();
 			System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(MainForm));
 			drawingPanel = new Panel();
-			buttonPrint = new Button();
 			panel2 = new Panel();
 			btnScenario4 = new Button();
 			btnScenario0 = new Button();
@@ -44,8 +43,6 @@
 			radioButton0 = new RadioButton();
 			radioButton1 = new RadioButton();
 			timer = new System.Windows.Forms.Timer(components);
-			printDocument1 = new System.Drawing.Printing.PrintDocument();
-			printPreviewDialog1 = new PrintPreviewDialog();
 			backgroundWorker1 = new System.ComponentModel.BackgroundWorker();
 			drawingPanel.SuspendLayout();
 			panel2.SuspendLayout();
@@ -54,7 +51,6 @@
 			// 
 			// drawingPanel
 			// 
-			drawingPanel.Controls.Add(buttonPrint);
 			drawingPanel.Controls.Add(panel2);
 			drawingPanel.Controls.Add(panel1);
 			drawingPanel.Dock = DockStyle.Fill;
@@ -69,16 +65,6 @@
 			drawingPanel.MouseUp += drawingPanel_MouseUp;
 			drawingPanel.MouseWheel += drawingPanel_MouseWheel;
 			drawingPanel.Resize += drawingPanel_Resize;
-			// 
-			// buttonPrint
-			// 
-			buttonPrint.Location = new Point(512, 10);
-			buttonPrint.Name = "buttonPrint";
-			buttonPrint.Size = new Size(42, 50);
-			buttonPrint.TabIndex = 6;
-			buttonPrint.Text = "Print";
-			buttonPrint.UseVisualStyleBackColor = true;
-			buttonPrint.Click += buttonPrint_Click;
 			// 
 			// panel2
 			// 
@@ -208,20 +194,6 @@
 			// 
 			timer.Tick += timer_Tick;
 			// 
-			// printDocument1
-			// 
-			printDocument1.PrintPage += printDocument1_PrintPage;
-			// 
-			// printPreviewDialog1
-			// 
-			printPreviewDialog1.AutoScrollMargin = new Size(0, 0);
-			printPreviewDialog1.AutoScrollMinSize = new Size(0, 0);
-			printPreviewDialog1.ClientSize = new Size(400, 300);
-			printPreviewDialog1.Enabled = true;
-			printPreviewDialog1.Icon = (Icon)resources.GetObject("printPreviewDialog1.Icon");
-			printPreviewDialog1.Name = "printPreviewDialog1";
-			printPreviewDialog1.Visible = false;
-			// 
 			// MainForm
 			// 
 			AutoScaleDimensions = new SizeF(7F, 15F);
@@ -252,9 +224,6 @@
 		private RadioButton radioButton0;
 		private RadioButton radioButton2;
 		private RadioButton radioButton05;
-		private Button buttonPrint;
-		private System.Drawing.Printing.PrintDocument printDocument1;
-		private PrintPreviewDialog printPreviewDialog1;
 		private Button btnScenario4;
 		private System.ComponentModel.BackgroundWorker backgroundWorker1;
 	}

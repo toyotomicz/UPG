@@ -1,86 +1,78 @@
 using System;
-using System.Collections.Generic;
 using System.Drawing;
-using System.Linq;
+using System.Drawing.Drawing2D;
+using System.IO;
+using System.Linq.Expressions;
 using System.Windows.Forms;
 using Cv10.model;
-using LiveChartsCore;
-using LiveChartsCore.Defaults;
 using LiveChartsCore.SkiaSharpView;
-using LiveChartsCore.SkiaSharpView.Painting;
-using SkiaSharp;
+using LiveChartsCore;
+using LiveChartsCore.SkiaSharpView;
+using LiveChartsCore.SkiaSharpView.WinForms;
+using System.Collections.Generic;
+
 
 namespace Cv10
 {
-	public partial class MainForm : Form
-	{
-		private void InitializeBoxPlot(CourseDb courseDb)
-		{
-			var boxPlotSeries = new List<ISeries>();
+    public partial class MainForm : Form
+    {
+        //see:https://livecharts.dev/docs/WinForms/2.0.0-rc2/Overview.Installation         
 
-			foreach (var course in courseDb.Courses)
-			{
-				
+        /// <summary>
+        /// Initializes a new instance of the <see cref="MainForm"/> class.
+        /// </summary>
+        public MainForm()
+        {
+            InitializeComponent();
 
-				var grades1 = course.Statistics.Select(s => (double)s.Grade1).ToArray();
-				var grades2 = course.Statistics.Select(s => (double)s.Grade2).ToArray();
-				var grades3 = course.Statistics.Select(s => (double)s.Grade3).ToArray();
-				var grades4 = course.Statistics.Select(s => (double)s.Grade4).ToArray();
+            var cdb = new CourseDb();
 
-				// pro kazdou znamku
-				boxPlotSeries.Add(new BoxSeries<double>
-				{
-					Values = new[] { new BoxValue(grades1) },
-					Name = $"{course.Name} - Grade 1",
-					Fill = new SolidColorPaint(SKColors.Green)
-				});
+            InitializeBarChart(cdb.Courses);
+            
+            //TODO: 5. Pridat titulek a popisy os 
+            //TODO: 6. SAMOSTATNE zmenit na % uspesnosti
+            //TODO: 7. Pridat popisky dat
+            //TODO: 8. Pridat legendu
+            //TODO: 9. Vizualni upravy: sirka mezer, fonty, ...
+            //TODO: 10. SAMOSTATNE LineSeries
 
-				boxPlotSeries.Add(new BoxSeries<double>
-				{
-					Values = new[] { new BoxValue(grades2) },
-					Name = $"{course.Name} - Grade 2",
-					Fill = new SolidColorPaint(SKColors.Blue)
-				});
+        }
 
-				boxPlotSeries.Add(new BoxSeries<double>
-				{
-					Values = new[] { new BoxValue(grades3) },
-					Name = $"{course.Name} - Grade 3",
-					Fill = new SolidColorPaint(SKColors.Orange)
-				});
+        private void InitializeBarChart(IList<Course> courses)
+        {
+            var labels = new List<string>();
+            foreach (var course in courses)
+            {
+                labels.AddRange(course.Statistics.Select(x => x.Label).ToList());
+            }
+            labels.Sort(
+                (x, y) => (x.Substring(3, 4) + (x[0] == 'Z' ? '0' : '1'))
+                .CompareTo((y.Substring(3, 4) + (y[0] == 'Z' ? '0' : '1'))
+            ));
+            labels = labels.Distinct().ToList();
 
-				boxPlotSeries.Add(new BoxSeries<double>
-				{
-					Values = new[] { new BoxValue(grades4) },
-					Name = $"{course.Name} - Grade 4",
-					Fill = new SolidColorPaint(SKColors.Red)
-				});
-			}
+			var series = new List<ISeries>(courses.Count);
+            foreach(var course in courses)
+            {
+                var cb = new ColumnSeries<CourseDataItem>()
+                {
+                    Name = course.Name,
+                    //Values = course.Statistics.Select(x => x.Students).ToList(),
+                    Values = course.Statistics,
+                    Mapping = (cd, p) => new(labels.IndexOf(cd.Label), cd.Students)
+                };
+                series.Add(cb);
+            }
 
-			cartesianChart1.Series = boxPlotSeries;
-			cartesianChart1.XAxes = new[]
-			{
-				new Axis
-				{
-					Labels = boxPlotSeries.Select(s => s.Name).ToList(),
-					LabelsRotation = 45
-				}
-			};
-
-			cartesianChart1.YAxes = new[]
-			{
-				new Axis
-				{
-					Name = "Number of Students"
-				}
-			};
-		}
-
-		public MainForm()
-		{
-			InitializeComponent();
-			var cdb = new CourseDb();
-			InitializeBoxPlot(cdb);
+            chart.Series = series;
+            chart.XAxes = new Axis[1]
+            {
+                new Axis
+                {
+                    Name = "Rocnik",
+                    Labels = labels,
+                }
+            };
 		}
 	}
 }

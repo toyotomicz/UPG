@@ -5,7 +5,6 @@ using System.Drawing;
 using System.Linq;
 using System.Windows.Forms;
 using static System.Windows.Forms.VisualStyles.VisualStyleElement.TaskbarClock;
-using System.Drawing.Printing;
 using Microsoft.VisualBasic.Devices;
 using System.Drawing.Imaging;
 using System.Threading.Tasks;
@@ -24,20 +23,20 @@ namespace UPG_semestralka
 		private double x_min, x_max, y_min, y_max;
 		private double world_width, world_height;
 
-		private int gridSpacingX;
-		private int gridSpacingY;
+		private int? gridSpacingX;
+		private int? gridSpacingY;
 
 		private double time = 0;
 		private const double ANGULAR_VELOCITY = Math.PI / 6; // π/6 rad/s
 		private double velocityMultiplier = 1.0;
 		private const double FIXED_TIMESTEP = 1.0 / 60.0; // 60 FPS
 
-		private PrintDocument printDocument;
-
+		// For the dragging of the probes
 		private bool isDragging = false;
 		private int draggedChargeIndex = -1;
 		private PointF dragOffset;
 
+		// For the secondary probe and its graph
 		private bool hasSecondaryProbe = false;
 		private PointF secondaryProbePosition;
 		private List<(double time, double intensity)> secondaryProbeData = new List<(double time, double intensity)>();
@@ -46,7 +45,7 @@ namespace UPG_semestralka
 		private System.Windows.Forms.Timer graphUpdateTimer;
 		private const int GRAPH_UPDATE_INTERVAL = 50; // Update every 50ms
 
-		public MainForm(int scenario, int gridSpacingX, int gridSpacingY)
+		public MainForm(int scenario, int? gridSpacingX, int? gridSpacingY)
 		{
 			InitializeComponent();
 			this.MinimumSize = new Size(800, 600);
@@ -54,19 +53,19 @@ namespace UPG_semestralka
 			this.gridSpacingX = gridSpacingX;
 			this.gridSpacingY = gridSpacingY;
 
-			typeof(Panel).InvokeMember("DoubleBuffered", BindingFlags.SetProperty | BindingFlags.Instance | BindingFlags.NonPublic,
+			typeof(Panel).InvokeMember("DoubleBuffered",
+				BindingFlags.SetProperty | BindingFlags.Instance | BindingFlags.NonPublic,
 				null, drawingPanel, new object[] { true });
 
 			InitializeWorld();
 
-			timer.Interval = (int)(FIXED_TIMESTEP * 1000); // Převod na milisekundy
+			timer.Interval = (int)(FIXED_TIMESTEP * 1000);
 			timer.Tick += timer_Tick;
 			timer.Start();
 
 			drawingPanel.MouseDown += drawingPanel_MouseDown;
 			drawingPanel.MouseMove += drawingPanel_MouseMove;
 			drawingPanel.MouseUp += drawingPanel_MouseUp;
-
 			drawingPanel.MouseWheel += drawingPanel_MouseWheel;
 
 			graphUpdateTimer = new System.Windows.Forms.Timer();
@@ -172,27 +171,37 @@ namespace UPG_semestralka
 			g.DrawLine(axisPen, centerX, 0, centerX, height);
 			g.DrawLine(axisPen, 0, centerY, width, centerY);
 
-			// Drawing grid lines with specified spacing
-			for (int x = centerX; x < width; x += gridSpacingX)
+			// Draw vertical grid lines
+			if (gridSpacingX.HasValue)
 			{
-				g.DrawLine(gridPen, x, 0, x, height);
+				int spacingX = gridSpacingX.Value;
+				for (int x = centerX; x < width; x += spacingX)
+				{
+					g.DrawLine(gridPen, x, 0, x, height);
+				}
+
+				for (int x = centerX; x > 0; x -= spacingX)
+				{
+					g.DrawLine(gridPen, x, 0, x, height);
+				}
 			}
 
-			for (int x = centerX; x > 0; x -= gridSpacingX)
+			// Draw horizontal grid lines
+			if (gridSpacingY.HasValue)
 			{
-				g.DrawLine(gridPen, x, 0, x, height);
-			}
+				int spacingY = gridSpacingY.Value;
+				for (int y = centerY; y < height; y += spacingY)
+				{
+					g.DrawLine(gridPen, 0, y, width, y);
+				}
 
-			for (int y = centerY; y < height; y += gridSpacingY)
-			{
-				g.DrawLine(gridPen, 0, y, width, y);
-			}
-
-			for (int y = centerY; y > 0; y -= gridSpacingY)
-			{
-				g.DrawLine(gridPen, 0, y, width, y);
+				for (int y = centerY; y > 0; y -= spacingY)
+				{
+					g.DrawLine(gridPen, 0, y, width, y);
+				}
 			}
 		}
+
 
 		private void DrawCharge(Graphics g, PointF position, double charge, double scale)
 		{
@@ -201,7 +210,7 @@ namespace UPG_semestralka
 
 			float area = (float)(Math.Abs(charge) * 0.2 * scale * scale);
 			float radius = (float)Math.Sqrt(area / Math.PI);
-			float size = radius * 2;
+			float size = radius * 2; // Charges size is equal to its values
 
 			Color chargeColor = charge > 0 ? Color.Red : Color.Blue;
 
@@ -222,7 +231,7 @@ namespace UPG_semestralka
 
 			g.DrawEllipse(new Pen(Color.Black, 1), x - radius, y - radius, size, size);
 
-			string chargeText = scenario == 4 ? $"{charge:F2} C" : $"{charge:F0} C";
+			string chargeText = scenario == 4 ? $"{charge:F2} C" : $"{charge:F0} C"; // Specially for the 4th scenario it's rounded on 2 decimal places
 			using (Font chargeFont = new Font("Arial", (float)(10 * scale / 100), FontStyle.Bold))
 			{
 				SizeF textSize = g.MeasureString(chargeText, chargeFont);
@@ -295,6 +304,7 @@ namespace UPG_semestralka
 		{
 			Vector2D electricField = new Vector2D(0, 0);
 
+			// Implementation of the Coulomb's law
 			foreach (var charge in charges)
 			{
 				double q = charge.charge(time);
@@ -359,13 +369,14 @@ namespace UPG_semestralka
 
 		private void timer_Tick(object sender, EventArgs e)
 		{
-			// Přidání fixního časového kroku pro konzistentní simulaci
+			// Fixed time step is used, can by manipuled by buttons
 			if (velocityMultiplier != 0)
 			{
 				time += FIXED_TIMESTEP * velocityMultiplier;
 				UpdateProbePosition();
 				this.drawingPanel.Invalidate();
 			}
+			// Calculations for the second probe and its graph
 			if (hasSecondaryProbe)
 			{
 				Vector2D force = CalculateForceOnProbe(secondaryProbePosition, charges);
@@ -383,6 +394,7 @@ namespace UPG_semestralka
 			);
 		}
 
+		// Buttons for the speed of time manipulation
 		private void radioButton1_CheckedChanged(object sender, EventArgs e)
 		{
 			velocityMultiplier = 1.0;
@@ -405,24 +417,6 @@ namespace UPG_semestralka
 		{
 			velocityMultiplier = 2.0;
 			timer.Start();
-		}
-
-		private void buttonPrint_Click(object sender, EventArgs e)
-		{
-			PrintDialog printDialog = new PrintDialog
-			{
-				Document = printDocument
-			};
-
-			if (printDialog.ShowDialog() == DialogResult.OK)
-			{
-				printDocument1.Print();
-			}
-		}
-
-		private void printDocument1_PrintPage(object sender, System.Drawing.Printing.PrintPageEventArgs e)
-		{
-			
 		}
 
 		private bool isMouseInCharge(Point mousePosition)
@@ -531,7 +525,7 @@ namespace UPG_semestralka
 					int stride = bmpData.Stride;
 					byte[] pixelData = new byte[stride * height];
 
-					const int blockSize = 20;
+					const int blockSize = 20; // Higher value for better performance, lower for quality
 
 					// Process pixels in parallel
 					Parallel.For(0, (height + blockSize - 1) / blockSize, j =>
@@ -568,7 +562,7 @@ namespace UPG_semestralka
 										pixelData[index] = color.B;
 										pixelData[index + 1] = color.G;
 										pixelData[index + 2] = color.R;
-										pixelData[index + 3] = 255;
+										pixelData[index + 3] = 255; // Transparency of the color, the aplha channel
 									}
 								}
 							}
@@ -596,7 +590,7 @@ namespace UPG_semestralka
 			double saturation = 1;
 			double value = 1;
 
-			return HSVToRGB(hue, saturation, value);
+			return HSVToRGB(hue, saturation, value); // Conversion from HSV to RGB
 		}
 		private Color HSVToRGB(double hue, double saturation, double value)
 		{
@@ -621,6 +615,15 @@ namespace UPG_semestralka
 		}
 		private void DrawStaticProbes(Graphics g, double scale)
 		{
+			if (!gridSpacingX.HasValue || !gridSpacingY.HasValue)
+			{
+				// Skip drawing if either grid spacing is null
+				return;
+			}
+
+			int spacingX = gridSpacingX.Value;
+			int spacingY = gridSpacingY.Value;
+
 			// Get panel dimensions
 			int width = drawingPanel.Width;
 			int height = drawingPanel.Height;
@@ -630,8 +633,8 @@ namespace UPG_semestralka
 			int centerY = height / 2;
 
 			// Calculate how many grid lines we can fit in each direction from center
-			int numLinesX = Math.Min(centerX / gridSpacingX, width / (2 * gridSpacingX));
-			int numLinesY = Math.Min(centerY / gridSpacingY, height / (2 * gridSpacingY));
+			int numLinesX = Math.Min(centerX / spacingX, width / (2 * spacingX));
+			int numLinesY = Math.Min(centerY / spacingY, height / (2 * spacingY));
 
 			float offsetX = (float)((width - (world_width * scale)) / 2);
 			float offsetY = (float)((height - (world_height * scale)) / 2);
@@ -645,8 +648,8 @@ namespace UPG_semestralka
 				for (int j = -numLinesY; j <= numLinesY; j++)
 				{
 					// Calculate screen coordinates (without offset since we're using transform)
-					int screenX = centerX + (i * gridSpacingX) - (int)offsetX;
-					int screenY = centerY + (j * gridSpacingY) - (int)offsetY;
+					int screenX = centerX + (i * spacingX) - (int)offsetX;
+					int screenY = centerY + (j * spacingY) - (int)offsetY;
 
 					// Convert to world coordinates
 					float worldX = screenX / (float)scale + (float)x_min;
@@ -906,10 +909,6 @@ namespace UPG_semestralka
 
 				secondaryProbeData.Add((currentTime, intensity));
 
-				// Add debug output
-				Console.WriteLine($"Time: {currentTime}, Intensity: {intensity}");
-				Console.WriteLine($"Data points count: {secondaryProbeData.Count}");
-
 				// Update the graph
 				graphForm.UpdateData(new List<(double, double)>(secondaryProbeData));
 			}
@@ -929,11 +928,11 @@ namespace UPG_semestralka
 
 				// Draw a diamond shape for the secondary probe
 				PointF[] diamond = {
-				new PointF(x, y - probeSize),
-				new PointF(x + probeSize, y),
-				new PointF(x, y + probeSize),
-				new PointF(x - probeSize, y)
-			};
+					new PointF(x, y - probeSize),
+					new PointF(x + probeSize, y),
+					new PointF(x, y + probeSize),
+					new PointF(x - probeSize, y)
+				};
 
 				g.FillPolygon(Brushes.Purple, diamond);
 
@@ -961,12 +960,10 @@ namespace UPG_semestralka
 			}
 			catch (Exception ex)
 			{
-				// Handle or log any drawing errors
 				Console.WriteLine($"Error drawing secondary probe: {ex.Message}");
 			}
 		}
 
-		// Assuming you have this helper method for drawing arrow heads
 		private void DrawSecondaryArrowHead(Graphics g, Pen pen, PointF start, PointF end, float size)
 		{
 			float angle = (float)Math.Atan2(end.Y - start.Y, end.X - start.X);
